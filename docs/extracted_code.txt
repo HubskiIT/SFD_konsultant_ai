@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,
+initial-scale=1.0">
+<title>SFD Smart Shopping Agent - Prototyp</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Google Fonts: Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;6
+00;700;800&display=swap" rel="stylesheet">
+<!-- Font Awesome Icons -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all
+.min.css">
+<script>
+tailwind.config = {
+theme: {
+extend: {
+colors: {
+sfdBlue: {
+DEFAULT: '#1D57DB', // Oficjalny Marine Blue
+SFD S.A.
+hover: '#1544b0',
+light: '#e8effb'
+},
+sfdDark: '#121212',
+sfdGray: '#f4f4f6'
+},
+fontFamily: {
+sans: ['Inter', 'sans-serif'],
+}
+}
+}
+}
+</script>
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: #f1f1f1;
+border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: #cbd5e1;
+border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background: #94a3b8;
+}
+@keyframes pulse-soft {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: .8; transform: scale(1.05); }
+}
+.pulse-active {
+animation: pulse-soft 2s infinite ease-in-out;
+}
+</style>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen flex flex-col
+antialiased">
+<!-- Nagłówek i Brand Bar SFD -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30
+shadow-xs">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<!-- Logo i Nazwa -->
+<div class="flex items-center gap-3">
+<div class="bg-sfdBlue text-white px-3 py-1.5
+rounded-lg font-black tracking-tighter text-2xl flex items-center
+justify-center">
+SFD<span class="text-xs font-semibold ml-1
+text-blue-200">AI</span>
+</div>
+<div class="hidden md:block">
+<span class="text-xs font-bold text-slate-400
+block tracking-wider uppercase">Sklep Suplementów</span>
+<span class="text-sm font-semibold
+text-slate-700 block -mt-1">Wirtualny Doradca</span>
+</div>
+</div>
+<!-- Status Live Prototypes -->
+<div class="hidden lg:flex items-center gap-2
+bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-medium
+border border-green-200">
+<span class="w-2.5 h-2.5 rounded-full bg-green-500
+inline-block animate-ping"></span>
+<span>Prototyp LIVE: Klient SFD (Wersja
+Wizualna)</span>
+</div>
+<!-- Koszyk Prawy Róg (Header) -->
+<div class="flex items-center gap-4">
+<button onclick="toggleCartDrawer()" class="relative
+p-2.5 text-slate-600 hover:text-sfdBlue hover:bg-slate-50 rounded-xl
+transition-all duration-200">
+<i class="fa-solid fa-cart-shopping
+text-xl"></i>
+<span id="cart-badge" class="absolute -top-1
+-right-1 bg-sfdBlue text-white text-xs font-bold w-5 h-5 rounded-full
+flex items-center justify-center border-2 border-white transform
+scale-90 transition-all duration-300 opacity-0">0</span>
+</button>
+<div class="text-right hidden sm:block">
+<p class="text-xs text-slate-400">Koszyk</p>
+<p id="cart-total-header" class="text-sm
+font-bold text-slate-800">0,00 zł</p>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Główny obszar roboczy -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8
+py-6 flex flex-col lg:flex-row gap-6">
+<!-- LEWA KOLUMNA: Interaktywny Czatbot -->
+<section class="flex-1 bg-white rounded-2xl border
+border-slate-200 shadow-sm flex flex-col overflow-hidden min-h-[600px]
+lg:min-h-[700px]">
+<!-- Nagłówek Czatu -->
+<div class="bg-sfdDark text-white p-4 flex items-center
+justify-between border-b border-neutral-800">
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-sfdBlue
+flex items-center justify-center text-white border border-blue-500
+font-bold">
+<i class="fa-solid fa-dumbbell text-sm"></i>
+</div>
+<span class="absolute bottom-0 right-0 w-3 h-3
+bg-emerald-500 rounded-full border-2 border-sfdDark"></span>
+</div>
+<div>
+<h2 class="font-bold text-sm
+tracking-wide">Konsultant SFD</h2>
+<p class="text-xs text-slate-400 flex
+items-center gap-1">
+<span class="inline-block w-1.5 h-1.5
+bg-emerald-400 rounded-full"></span>
+Gotowy do pomocy w zakupach
+</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="resetChat()" class="text-xs
+bg-neutral-800 text-slate-300 px-3 py-1.5 rounded-lg
+hover:bg-neutral-700 transition-colors" title="Wyczyść czat">
+<i class="fa-solid fa-rotate-left mr-1"></i>
+Restart
+</button>
+</div>
+</div>
+<!-- Okno Rozmowy -->
+<div id="chat-box" class="flex-1 p-4 overflow-y-auto
+space-y-4 custom-scrollbar bg-[#f8fafc]">
+<!-- Początkowa Wiadomość Systemowa -->
+<div class="flex gap-3 max-w-[85%]">
+<div class="w-8 h-8 rounded-full bg-sfdBlue flex
+items-center justify-center text-white text-xs shrink-0 self-end mb-1">
+<i class="fa-solid fa-dumbbell"></i>
+</div>
+<div class="bg-white rounded-2xl rounded-bl-none
+p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm">
+<p class="font-semibold text-sfdBlue text-xs
+uppercase tracking-wider mb-1">Konsultant SFD</p>
+Cześć! Jestem Twoim wirtualnym konsultantem SFD.
+Pomogę Ci dobrać odpowiednie suplementy, dietetyczne słodkości lub
+ułożyć szybki koszyk zakupowy.
+<br><br>
+<strong>W czym mogę Ci dzisiaj pomóc?</strong>
+</div>
+</div>
+</div>
+<!-- Wskaźnik pisania bota -->
+<div id="typing-indicator" class="hidden px-4 py-2
+bg-[#f8fafc]">
+<div class="flex items-center gap-2 text-xs
+text-slate-400">
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-slate-400
+animate-bounce" style="animation-delay: 0.1s"></span>
+<span class="w-2 h-2 rounded-full bg-slate-400
+animate-bounce" style="animation-delay: 0.2s"></span>
+<span class="w-2 h-2 rounded-full bg-slate-400
+animate-bounce" style="animation-delay: 0.3s"></span>
+</div>
+<span>Konsultant analizuje ofertę...</span>
+</div>
+</div>
+<!-- Kafelki Sugestii Pytań -->
+<div class="px-4 py-3 bg-white border-t border-slate-100">
+<p class="text-xs text-slate-400 font-semibold mb-2
+uppercase tracking-wide">Najczęstsze pytania (Wybierz aby
+przetestować):</p>
+<div class="flex flex-wrap gap-2">
+<button onclick="sendSuggestion('Chcę schudnąć, co
+🎯
+polecasz? ')" class="bg-slate-100 hover:bg-sfdBlue hover:text-white
+text-slate-700 text-xs px-3 py-2 rounded-xl transition-all font-medium
+border border-slate-200">
+🎯
+Chcę schudnąć
+</button>
+<button onclick="sendSuggestion('Szukam dżemów zero
+🍓
+kalorii ')" class="bg-slate-100 hover:bg-sfdBlue hover:text-white
+text-slate-700 text-xs px-3 py-2 rounded-xl transition-all font-medium
+border border-slate-200">
+🍓
+Szukam dżemów zero
+</button>
+<button onclick="sendSuggestion('Mam nadciśnienie, a
+⚠
+chcę schudnąć. Co brać? ')" class="bg-slate-100 hover:bg-sfdBlue
+hover:text-white text-slate-700 text-xs px-3 py-2 rounded-xl
+transition-all font-medium border border-slate-200">
+⚠
+Nadciśnienie a redukcja
+</button>
+<button onclick="sendSuggestion('Jak działa system
+🎁
+poleceń? ')" class="bg-blue-50 border-blue-200 hover:bg-sfdBlue
+hover:text-white text-sfdBlue text-xs px-3 py-2 rounded-xl
+transition-all font-bold border">
+🎁
+System Poleceń (-15%)
+</button>
+</div>
+</div>
+<!-- Formularz Czatu -->
+<div class="p-4 bg-white border-t border-slate-200">
+<form id="chat-form" onsubmit="handleChatSubmit(event)"
+class="flex gap-2">
+<input type="text" id="chat-input"
+placeholder="Wpisz np. 'szukam dżemów', 'chcę schudnąć' lub 'mam
+kod'..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl
+px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sfdBlue
+focus:border-transparent transition-all" required>
+<button type="submit" class="bg-sfdBlue text-white
+px-5 py-3 rounded-xl hover:bg-sfdBlue-hover transition-colors
+font-semibold flex items-center justify-center gap-2">
+<span>Wyślij</span>
+<i class="fa-solid fa-paper-plane text-xs"></i>
+</button>
+</form>
+</div>
+</section>
+<!-- PRAWA KOLUMNA: Podgląd Koszyka (Widok Real-Time) -->
+<aside class="w-full lg:w-96 bg-white rounded-2xl border
+border-slate-200 shadow-sm p-5 flex flex-col self-start sticky top-24">
+<div class="flex items-center justify-between pb-4 border-b
+border-slate-100 mb-4">
+<div class="flex items-center gap-2">
+<span class="w-8 h-8 rounded-lg bg-blue-50
+text-sfdBlue flex items-center justify-center font-bold">
+<i class="fa-solid fa-bag-shopping"></i>
+</span>
+<h3 class="font-bold text-slate-800">Twój Koszyk
+SFD</h3>
+</div>
+<span id="cart-count-badge" class="bg-slate-100
+text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-full border
+border-slate-200">0 szt.</span>
+</div>
+<!-- Lista zakupów w koszyku -->
+<div id="cart-items" class="flex-1 min-h-[150px]
+max-h-[300px] overflow-y-auto space-y-3 custom-scrollbar pr-1 mb-4">
+<!-- Stan pusty koszyka -->
+<div id="cart-empty-state" class="text-center py-8">
+<div class="text-slate-300 text-4xl mb-2">
+<i class="fa-solid fa-basket-shopping"></i>
+</div>
+<p class="text-slate-500 text-sm">Twój koszyk jest
+pusty.</p>
+<p class="text-xs text-slate-400 mt-1">Porozmawiaj z
+agentem na czacie, aby dodać produkty!</p>
+</div>
+</div>
+<!-- Finanse koszyka -->
+<div class="bg-slate-50 rounded-xl p-4 space-y-2 border
+border-slate-100">
+<div class="flex justify-between text-xs
+text-slate-500">
+<span>Wartość produktów:</span>
+<span id="summary-subtotal">0,00 zł</span>
+</div>
+<div class="flex justify-between text-xs
+text-slate-500">
+<span>Dostawa:</span>
+<span id="summary-delivery" class="text-green-600
+font-medium">Gratis (Promocja SFD)</span>
+</div>
+<div class="h-px bg-slate-200 my-2"></div>
+<div class="flex justify-between text-sm font-bold
+text-slate-800">
+<span>Do zapłaty:</span>
+<span id="summary-total" class="text-lg
+text-sfdBlue">0,00 zł</span>
+</div>
+</div>
+<button onclick="checkoutSimulation()" class="w-full mt-4
+bg-sfdDark hover:bg-black text-white py-3.5 rounded-xl font-bold
+transition-all text-sm flex items-center justify-center gap-2 shadow-sm
+shadow-black/10">
+<span>Przejdź do Kasy</span>
+<i class="fa-solid fa-arrow-right-to-bracket
+text-xs"></i>
+</button>
+<!-- Baner Systemu Poleceń -->
+<div class="mt-5 bg-gradient-to-r from-sfdBlue to-blue-500
+rounded-xl p-4 text-white shadow-sm relative overflow-hidden">
+<i class="fa-solid fa-gift absolute -right-2 -bottom-2
+text-6xl opacity-20 transform -rotate-12"></i>
+<h4 class="font-bold text-sm mb-1 relative z-10">Zgarnij
+🎁
+15% zniżki! </h4>
+<p class="text-[11px] text-blue-50 mb-3 relative
+z-10">Poleć nasz sklep znajomemu. Ty i on zyskacie rabat na zakupy.</p>
+<button onclick="sendSuggestion('Jak działa system
+🎁
+poleceń? ')" class="w-full bg-white text-sfdBlue py-2 rounded-lg
+text-xs font-bold hover:bg-blue-50 transition-colors relative z-10">
+Generuj swój kod
+</button>
+</div>
+</aside>
+</main>
+<!-- Custom alert modal -->
+<div id="custom-alert" class="fixed inset-0 bg-black/60
+backdrop-blur-xs flex items-center justify-center z-50 p-4
+transition-all duration-300 hidden">
+<div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl
+border border-slate-100 transform scale-95 transition-all">
+<div id="alert-icon-wrapper" class="w-12 h-12 rounded-full
+bg-green-100 text-green-600 flex items-center justify-center text-xl
+mx-auto mb-4">
+<i class="fa-solid fa-check"></i>
+</div>
+<h4 id="alert-title" class="text-center font-bold
+text-slate-800 text-lg mb-1">Sukces!</h4>
+<p id="alert-message" class="text-center text-slate-500
+text-sm mb-6">Operacja przebiegła pomyślnie.</p>
+<button onclick="closeCustomAlert()" class="w-full
+bg-sfdBlue hover:bg-sfdBlue-hover text-white py-3 rounded-xl font-bold
+transition-colors text-sm">
+Super, rozumiem!
+</button>
+</div>
+</div>
+<!-- Footer z prawami autorskimi -->
+<footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+<div class="max-w-7xl mx-auto px-4 text-center text-xs
+text-slate-400">
+&copy; 2026 SFD S.A. Wszystkie prawa zastrzeżone.
+Interaktywny prototyp panelu konsultanta na stronę główną (Marine Blue
+Brand).
+</div>
+</footer>
+<script>
+// Baza produktów SFD - Zaktualizowana o prawdziwe grafiki
+(Unsplash API)
+const database = {
+fatburner: {
+id: 'p1',
+name: 'SFD FAT BURNER EXTREME',
+desc: 'Mocny, bezpieczny spalacz tłuszczu, który
+skutecznie przyspiesza metabolizm i hamuje podjadanie.',
+price: 49.99,
+img:
+'https://images.unsplash.com/photo-1607613009820-a29f4bea4986?w=200&h=2
+00&fit=crop',
+options: ['90 kapsułek', '180 kapsułek (+35,00 zł)']
+},
+protein: {
+id: 'p2',
+name: 'ALLNUTRITION WPC80 PROTEIN PLUS',
+desc: 'Najwyższej jakości białko serwatkowe, dba o
+regenerację i uczucie sytości na redukcji.',
+price: 79.99,
+img:
+'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=200&h=2
+00&fit=crop',
+options: ['Smak Truskawka', 'Smak Wanilia', 'Smak
+Czekolada']
+},
+jam: {
+id: 'p3',
+name: 'ALLNUTRITION FRULOVE IN JELLY (DŻEM)',
+desc: 'Pyszny owocowy dżem zero kalorii bez dodatku
+cukru z kawałkami prawdziwych owoców.',
+price: 24.99,
+img:
+'https://images.unsplash.com/photo-1506802913710-98b068212177?w=200&h=2
+00&fit=crop',
+options: ['Truskawka', 'Malina', 'Wiśnia']
+},
+jamAlternative: {
+id: 'p4',
+name: 'SFD DZIKI DŻEM JAGODOWY',
+desc: 'Bestsellerowy dżem bezcukrowy na bazie dzikich
+jagód. Idealny do omletów i deserów fit.',
+price: 26.99,
+img:
+'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=200&h=2
+00&fit=crop',
+options: ['Jagoda leśna']
+},
+shaker: {
+id: 'p5',
+name: 'SFD SHAKER PRO SPORT',
+desc: 'Ergonomiczny shaker do idealnego rozmieszania
+Twoich odżywek.',
+price: 19.99,
+img:
+'https://images.unsplash.com/photo-1622359487926-444a1e9444be?w=200&h=2
+00&fit=crop',
+options: ['Standard Blue']
+},
+carnitine: {
+id: 'p6',
+name: 'SFD L-CARNITINE SINEFRYNA',
+desc: 'Bezpieczny spalacz niepodnoszący ciśnienia
+tętniczego - idealna ochrona serca i wsparcie metabolizmu.',
+price: 39.99,
+img:
+'https://images.unsplash.com/photo-1584308666744-24d5e478d530?w=200&h=2
+00&fit=crop',
+options: ['90 tabletek', '180 tabletek (+25,00 zł)']
+}
+};
+let cart = [];
+window.onload = function() {
+document.getElementById('chat-input').focus();
+};
+function showCustomAlert(title, message, type = 'success') {
+const alertModal = document.getElementById('custom-alert');
+const alertTitle = document.getElementById('alert-title');
+const alertMessage =
+document.getElementById('alert-message');
+const iconWrapper =
+document.getElementById('alert-icon-wrapper');
+alertTitle.innerText = title;
+alertMessage.innerText = message;
+if (type === 'success') {
+iconWrapper.className = "w-12 h-12 rounded-full
+bg-green-100 text-green-600 flex items-center justify-center text-xl
+mx-auto mb-4";
+iconWrapper.innerHTML = '<i class="fa-solid
+fa-check"></i>';
+} else if (type === 'warning') {
+iconWrapper.className = "w-12 h-12 rounded-full
+bg-amber-100 text-amber-600 flex items-center justify-center text-xl
+mx-auto mb-4";
+iconWrapper.innerHTML = '<i class="fa-solid
+fa-triangle-exclamation"></i>';
+} else {
+iconWrapper.className = "w-12 h-12 rounded-full
+bg-blue-100 text-blue-600 flex items-center justify-center text-xl
+mx-auto mb-4";
+iconWrapper.innerHTML = '<i class="fa-solid
+fa-circle-info"></i>';
+}
+alertModal.classList.remove('hidden');
+}
+function closeCustomAlert() {
+document.getElementById('custom-alert').classList.add('hidden');
+}
+function appendUserMessage(text) {
+const chatBox = document.getElementById('chat-box');
+const userMsg = `
+<div class="flex gap-3 justify-end max-w-[85%] ml-auto">
+<div class="bg-sfdBlue text-white rounded-2xl
+rounded-br-none p-3.5 shadow-sm text-sm">
+${text}
+</div>
+</div>
+`;
+chatBox.insertAdjacentHTML('beforeend', userMsg);
+chatBox.scrollTop = chatBox.scrollHeight;
+}
+function appendBotMessage(htmlContent) {
+const chatBox = document.getElementById('chat-box');
+const botMsg = `
+<div class="flex gap-3 max-w-[85%]">
+<div class="w-8 h-8 rounded-full bg-sfdBlue flex
+items-center justify-center text-white text-xs shrink-0 self-end mb-1">
+<i class="fa-solid fa-dumbbell"></i>
+</div>
+<div class="bg-white rounded-2xl rounded-bl-none
+p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm w-full">
+<p class="font-semibold text-sfdBlue text-xs
+uppercase tracking-wider mb-1">Konsultant SFD</p>
+${htmlContent}
+</div>
+</div>
+`;
+chatBox.insertAdjacentHTML('beforeend', botMsg);
+chatBox.scrollTop = chatBox.scrollHeight;
+}
+function showTypingIndicator(show) {
+const indicator =
+document.getElementById('typing-indicator');
+if (show) {
+indicator.classList.remove('hidden');
+} else {
+indicator.classList.add('hidden');
+}
+const chatBox = document.getElementById('chat-box');
+chatBox.scrollTop = chatBox.scrollHeight;
+}
+function sendSuggestion(text) {
+appendUserMessage(text);
+processBotResponse(text);
+}
+function handleChatSubmit(event) {
+event.preventDefault();
+const input = document.getElementById('chat-input');
+const query = input.value.trim();
+if (!query) return;
+appendUserMessage(query);
+input.value = '';
+processBotResponse(query);
+}
+function processBotResponse(query) {
+showTypingIndicator(true);
+const normalized =
+query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+setTimeout(() => {
+showTypingIndicator(false);
+// 1. Scenariusz System Poleceń (Referral System) -
+NOWOŚĆ
+if (normalized.includes("polecen") ||
+normalized.includes("polec") || normalized.includes("rabat") ||
+normalized.includes("znajom") || normalized.includes("kod")) {
+appendBotMessage(`
+Jasne! Uruchomiłem dla Ciebie <strong>System
+🤝
+Poleceń SFD</strong>. Zyskujesz Ty i Twój znajomy!
+<br><br>
+Wystarczy, że udostępnisz swój unikalny kod
+znajomemu. Gdy zrobi u nas zakupy, <strong>oboje otrzymacie 15%
+rabatu</strong> na całe zamówienie!
+<div class="mt-4 bg-white border border-blue-200
+rounded-xl p-4 text-center shadow-sm">
+<div class="w-12 h-12 rounded-full
+bg-blue-50 text-sfdBlue flex items-center justify-center text-2xl
+mx-auto mb-2">
+<i class="fa-solid fa-gift"></i>
+</div>
+<h4 class="font-bold text-slate-800
+text-sm">Twój unikalny kod polecający</h4>
+<p class="text-[11px] text-slate-500
+mb-3">Skopiuj i wyślij SMSem lub na Messengerze.</p>
+<div class="flex flex-col sm:flex-row gap-2
+justify-center">
+<input type="text"
+value="SFD-AI-2026-B1U" class="w-full sm:w-2/3 text-center font-mono
+text-sm border border-slate-200 rounded-lg bg-slate-50 py-2
+focus:outline-none text-slate-700 font-bold" readonly
+id="ref-code-input">
+<button onclick="copyReferralCode()"
+class="bg-sfdBlue hover:bg-sfdBlue-hover text-white py-2 px-4
+rounded-lg text-xs font-bold transition-all flex items-center
+justify-center gap-2">
+<i class="fa-solid fa-copy"></i>
+Kopiuj
+</button>
+</div>
+</div>
+`);
+// 2. Scenariusz odchudzanie / schudnąć
+} else if (normalized.includes("schud") ||
+normalized.includes("redukcj") || normalized.includes("spal") ||
+normalized.includes("otluszcz")) {
+if (normalized.includes("cisn") ||
+normalized.includes("serc") || normalized.includes("chora") ||
+normalized.includes("nadcisn")) {
+triggerCardiacWarning();
+return;
+}
+appendBotMessage(`
+Cieszę się, że chcesz zadbać o swoją sylwetkę!
+Przy redukcji tkanki tłuszczowej najważniejszy jest <strong>deficyt
+kaloryczny</strong> oraz odpowiednie <strong>białko</strong>, które
+chroni mięśnie i daje sytość.
+<br><br>
+Oto dwa wyselekcjonowane przeze mnie produkty
+SFD, które rewelacyjnie pomogą Ci osiągnąć ten cel:
+<div class="mt-4 space-y-4">
+<!-- Karta Produktu 1 -->
+<div class="bg-slate-50 border
+border-slate-200 rounded-xl p-3 flex flex-col md:flex-row gap-3">
+<img src="${database.fatburner.img}"
+class="w-20 h-20 rounded-lg object-cover mx-auto md:mx-0 shadow-sm"
+alt="Fat Burner">
+<div class="flex-1">
+<h4 class="font-bold text-slate-800
+text-sm">${database.fatburner.name}</h4>
+<p class="text-xs text-slate-500
+mt-0.5">${database.fatburner.desc}</p>
+<div class="mt-2 flex flex-col
+sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<label class="block
+text-[10px] font-bold text-slate-400 uppercase">Wybór
+opakowania:</label>
+<select
+id="select-fatburner" class="bg-white border border-slate-200 rounded
+px-2 py-1 text-xs focus:ring-1 focus:ring-sfdBlue focus:outline-none">
+<option value="90">90
+Kapsułek - 49,99 zł</option>
+<option value="180">180
+Kapsułek - 84,99 zł</option>
+</select>
+</div>
+<button
+onclick="addToCartFromChat('fatburner', 'select-fatburner')"
+class="bg-sfdBlue hover:bg-sfdBlue-hover text-white text-xs font-bold
+px-3 py-2 rounded-lg transition-all flex items-center justify-center
+gap-1.5 self-end">
+<i class="fa-solid
+fa-cart-plus"></i> Dodaj do koszyka
+</button>
+</div>
+</div>
+</div>
+<!-- Karta Produktu 2 -->
+<div class="bg-slate-50 border
+border-slate-200 rounded-xl p-3 flex flex-col md:flex-row gap-3">
+<img src="${database.protein.img}"
+class="w-20 h-20 rounded-lg object-cover mx-auto md:mx-0 shadow-sm"
+alt="Protein">
+<div class="flex-1">
+<h4 class="font-bold text-slate-800
+text-sm">${database.protein.name}</h4>
+<p class="text-xs text-slate-500
+mt-0.5">${database.protein.desc}</p>
+<div class="mt-2 flex flex-col
+sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<label class="block
+text-[10px] font-bold text-slate-400 uppercase">Wybierz smak:</label>
+<select id="select-protein"
+class="bg-white border border-slate-200 rounded px-2 py-1 text-xs
+focus:ring-1 focus:ring-sfdBlue focus:outline-none">
+<option
+value="Truskawka">Truskawka - 79,99 zł</option>
+<option
+value="Wanilia">Wanilia - 79,99 zł</option>
+<option
+value="Czekolada">Czekolada - 79,99 zł</option>
+</select>
+</div>
+<button
+onclick="addToCartFromChat('protein', 'select-protein')"
+class="bg-sfdBlue hover:bg-sfdBlue-hover text-white text-xs font-bold
+px-3 py-2 rounded-lg transition-all flex items-center justify-center
+gap-1.5 self-end">
+<i class="fa-solid
+fa-cart-plus"></i> Dodaj do koszyka
+</button>
+</div>
+</div>
+</div>
+</div>
+`);
+// 3. Scenariusz dżemy / dżem / slodkosci
+} else if (normalized.includes("dzem") ||
+normalized.includes("frulove") || normalized.includes("konfitur") ||
+normalized.includes("galaretk")) {
+appendBotMessage(`
+Nasze dżemy z serii <strong>Frulove in
+Jelly</strong> to absolutny hit na redukcji! Mają zero kalorii z
+dodanego cukru i smakują genialnie.
+<br><br>
+<strong>Uwaga dotycząca dostępności:</strong>
+Smak <em>Truskawkowy</em> bije rekordy sprzedaży i właśnie nam się
+wyprzedał, ale przygotowałem dla Ciebie najlepsze alternatywy!
+<div class="mt-4 space-y-4">
+<!-- Karta Produktu: Frulove (Smaki
+dostępne) -->
+<div class="bg-slate-50 border
+border-slate-200 rounded-xl p-3 flex flex-col md:flex-row gap-3">
+<img src="${database.jam.img}"
+class="w-20 h-20 rounded-lg object-cover mx-auto md:mx-0 shadow-sm"
+alt="Frulove Jam">
+<div class="flex-1">
+<div class="flex items-center
+gap-1.5 flex-wrap">
+<h4 class="font-bold
+text-slate-800 text-sm">${database.jam.name}</h4>
+<span class="bg-amber-100
+text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded">Truskawka
+wyprzedana</span>
+</div>
+<p class="text-xs text-slate-500
+mt-0.5">${database.jam.desc}</p>
+<div class="mt-2 flex flex-col
+sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<label class="block
+text-[10px] font-bold text-slate-400 uppercase">Wybierz dostępny
+smak:</label>
+<select id="select-jam"
+class="bg-white border border-slate-200 rounded px-2 py-1 text-xs
+focus:ring-1 focus:ring-sfdBlue focus:outline-none">
+<option
+value="Malina">Wyśmienita Malina - 24,99 zł</option>
+<option
+value="Wiśnia">Soczysta Wiśnia - 24,99 zł</option>
+</select>
+</div>
+<button
+onclick="addToCartFromChat('jam', 'select-jam')" class="bg-sfdBlue
+hover:bg-sfdBlue-hover text-white text-xs font-bold px-3 py-2
+rounded-lg transition-all flex items-center justify-center gap-1.5
+self-end">
+<i class="fa-solid
+fa-cart-plus"></i> Dodaj do koszyka
+</button>
+</div>
+</div>
+</div>
+<!-- Karta Produktu Alternatywnego: Dziki
+dżem -->
+<div class="bg-slate-50 border
+border-slate-200 rounded-xl p-3 flex flex-col md:flex-row gap-3
+border-l-4 border-l-amber-500">
+<img
+src="${database.jamAlternative.img}" class="w-20 h-20 rounded-lg
+object-cover mx-auto md:mx-0 shadow-sm" alt="Dziki Dżem">
+<div class="flex-1">
+<div class="flex items-center
+gap-1.5 flex-wrap">
+<h4 class="font-bold
+text-slate-800 text-sm">${database.jamAlternative.name}</h4>
+<span class="bg-emerald-100
+text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded">Zalecany
+zamiennik</span>
+</div>
+<p class="text-xs text-slate-500
+mt-0.5">${database.jamAlternative.desc}</p>
+<div class="mt-2 flex flex-col
+sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<label class="block
+text-[10px] font-bold text-slate-400 uppercase">Wariant:</label>
+<select
+id="select-alternative-jam" class="bg-white border border-slate-200
+rounded px-2 py-1 text-xs focus:ring-1 focus:ring-sfdBlue
+focus:outline-none" disabled>
+<option value="Jagoda
+leśna">Jagoda leśna - 26,99 zł</option>
+</select>
+</div>
+<button
+onclick="addToCartFromChat('jamAlternative', 'select-alternative-jam')"
+class="bg-sfdBlue hover:bg-sfdBlue-hover text-white text-xs font-bold
+px-3 py-2 rounded-lg transition-all flex items-center justify-center
+gap-1.5 self-end">
+<i class="fa-solid
+fa-cart-plus"></i> Dodaj do koszyka
+</button>
+</div>
+</div>
+</div>
+</div>
+`);
+// 4. Scenariusz medyczny - nadciśnienie, serce itp.
+} else if (normalized.includes("cisn") ||
+normalized.includes("serc") || normalized.includes("chora") ||
+normalized.includes("nadcisn")) {
+triggerCardiacWarning();
+// 5. Scenariusz białko
+} else if (normalized.includes("bialk") ||
+normalized.includes("wpc") || normalized.includes("protein")) {
+appendBotMessage(`
+Podaż pełnowartościowego białka to podstawa
+zarówno na masie, jak i na redukcji. Oto nasz bestseller wszech czasów
+o znakomitym profilu aminokwasowym:
+<div class="mt-4">
+<div class="bg-slate-50 border
+border-slate-200 rounded-xl p-3 flex flex-col md:flex-row gap-3">
+<img src="${database.protein.img}"
+class="w-20 h-20 rounded-lg object-cover mx-auto md:mx-0 shadow-sm"
+alt="Protein">
+<div class="flex-1">
+<h4 class="font-bold text-slate-800
+text-sm">${database.protein.name}</h4>
+<p class="text-xs text-slate-500
+mt-0.5">${database.protein.desc}</p>
+<div class="mt-2 flex flex-col
+sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<label class="block
+text-[10px] font-bold text-slate-400 uppercase">Wybierz smak:</label>
+<select
+id="select-protein-only" class="bg-white border border-slate-200
+rounded px-2 py-1 text-xs focus:ring-1 focus:ring-sfdBlue
+focus:outline-none">
+<option
+value="Truskawka">Truskawka - 79,99 zł</option>
+<option
+value="Wanilia">Wanilia - 79,99 zł</option>
+<option
+value="Czekolada">Czekolada - 79,99 zł</option>
+</select>
+</div>
+<button
+onclick="addToCartFromChat('protein', 'select-protein-only')"
+class="bg-sfdBlue hover:bg-sfdBlue-hover text-white text-xs font-bold
+px-3 py-2 rounded-lg transition-all flex items-center justify-center
+gap-1.5 self-end">
+<i class="fa-solid
+fa-cart-plus"></i> Dodaj do koszyka
+</button>
+</div>
+</div>
+</div>
+</div>
+`);
+// Default fallback
+} else {
+appendBotMessage(`
+Nie jestem pewien, jak odpowiedzieć na to
+zapytanie. Jako asystent SFD specjalizuję się w doborze suplementacji i
+zdrowej żywności.
+<br><br>
+<strong>Możesz mnie zapytać o:</strong>
+<ul class="list-disc list-inside mt-1 text-xs
+space-y-1">
+<li>Jak skutecznie
+<strong>schudnąć</strong>?</li>
+<li>Gdzie znajdę <strong>dżemy zero
+kalorii</strong>?</li>
+<li>Jak działa <strong>System poleceń i
+🎁
+rabatów</strong>? </li>
+</ul>
+`);
+}
+}, 800);
+}
+function triggerCardiacWarning() {
+appendBotMessage(`
+<div class="border-l-4 border-amber-500 bg-amber-50 p-3
+rounded-lg text-slate-700 text-xs leading-relaxed">
+<p class="font-bold text-amber-800 flex items-center
+gap-1.5 mb-1">
+<i class="fa-solid fa-triangle-exclamation"></i>
+WAŻNA INFORMACJA DOTYCZĄCA ZDROWIA
+</p>
+Bezpieczeństwo jest dla nas absolutnym priorytetem w
+SFD. Skoro wspominasz o problemach z ciśnieniem/sercem, kategorycznie
+odradzamy stosowanie termogeników (spalaczy tłuszczu o wysokiej
+zawartości kofeiny), ponieważ mogą one podnosić tętno. Przed
+rozpoczęciem jakiejkolwiek suplementacji zalecamy konsultację z
+lekarzem.
+</div>
+<br>
+Zamiast tego, całkowicie bezpieczną alternatywą, która
+wspiera metabolizm tłuszczów na poziomie komórkowym bez wpływu na pracę
+serca, jest <strong>L-Karnityna</strong>:
+<div class="mt-4">
+<div class="bg-slate-50 border border-slate-200
+rounded-xl p-3 flex flex-col md:flex-row gap-3">
+<img src="${database.carnitine.img}" class="w-20
+h-20 rounded-lg object-cover mx-auto md:mx-0 shadow-sm"
+alt="L-Carnitine">
+<div class="flex-1">
+<h4 class="font-bold text-slate-800
+text-sm">${database.carnitine.name}</h4>
+<p class="text-xs text-slate-500
+mt-0.5">${database.carnitine.desc}</p>
+<div class="mt-2 flex flex-col sm:flex-row
+sm:items-center justify-between gap-2">
+<div>
+<label class="block text-[10px]
+font-bold text-slate-400 uppercase">Wybierz opakowanie:</label>
+<select id="select-carnitine"
+class="bg-white border border-slate-200 rounded px-2 py-1 text-xs
+focus:ring-1 focus:ring-sfdBlue focus:outline-none">
+<option value="90">90 Tabletek -
+39,99 zł</option>
+<option value="180">180 Tabletek
+- 64,99 zł</option>
+</select>
+</div>
+<button
+onclick="addToCartFromChat('carnitine', 'select-carnitine')"
+class="bg-sfdBlue hover:bg-sfdBlue-hover text-white text-xs font-bold
+px-3 py-2 rounded-lg transition-all flex items-center justify-center
+gap-1.5 self-end">
+<i class="fa-solid
+fa-cart-plus"></i> Dodaj do koszyka
+</button>
+</div>
+</div>
+</div>
+</div>
+`);
+}
+function copyReferralCode() {
+const input = document.getElementById('ref-code-input');
+if (input) {
+input.select();
+document.execCommand('copy');
+showCustomAlert("Skopiowano Kod!", "Twój kod polecający
+z 15% rabatem został skopiowany do schowka. Wyślij go teraz do
+znajomego!", 'success');
+}
+}
+function addToCartFromChat(productKey, selectId) {
+const product = database[productKey];
+const selectElement = document.getElementById(selectId);
+const chosenOption = selectElement ?
+selectElement.options[selectElement.selectedIndex].text : '';
+let price = product.price;
+let variantName = chosenOption.split(' - ')[0];
+if (chosenOption.includes('+35,00 zł')) {
+price = 84.99;
+} else if (chosenOption.includes('+25,00 zł')) {
+price = 64.99;
+}
+cart.push({
+id: product.id + '-' + Date.now(),
+key: productKey,
+name: product.name,
+price: price,
+variant: variantName,
+img: product.img
+});
+updateCartUI();
+showCustomAlert("Dodano do koszyka!", `${product.name}
+(${variantName}) pomyślnie dodany do Twojego zamówienia.`, 'success');
+triggerCrossSellResponse(productKey);
+}
+function triggerCrossSellResponse(addedProductKey) {
+showTypingIndicator(true);
+setTimeout(() => {
+showTypingIndicator(false);
+if (addedProductKey === 'protein') {
+appendBotMessage(`
+<div class="bg-blue-50/50 border
+border-sfdBlue/10 rounded-xl p-3">
+<p class="font-bold text-slate-800 text-xs
+🔥
+uppercase tracking-wide text-sfdBlue mb-1"> OFERTA SPECJALNA SFD</p>
+Widzę, że do Twojego koszyka trafiło pyszne
+białko! Czy chciałbyś dobrać nasz flagowy <strong>shaker SFD
+Pro</strong>, aby wygodnie przygotowywać szejki w każdych warunkach?
+<br><br>
+Teraz w promocji za jedyne <strong>19,99
+zł</strong>!
+<div class="mt-3 flex gap-2">
+<button
+onclick="addCrossSellItem('shaker')" class="bg-sfdBlue text-white
+text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-sfdBlue-hover
+transition-colors">
+Tak, dorzuć do koszyka!
+</button>
+<button
+onclick="declineCrossSell('shaker')" class="bg-slate-200 text-slate-700
+text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-300
+transition-colors">
+Nie, dziękuję
+</button>
+</div>
+</div>
+`);
+} else if (addedProductKey === 'jam' || addedProductKey
+=== 'jamAlternative') {
+appendBotMessage(`
+<div class="bg-blue-50/50 border
+border-sfdBlue/10 rounded-xl p-3">
+<p class="font-bold text-slate-800 text-xs
+🥞
+uppercase tracking-wide text-sfdBlue mb-1"> IDEALNE DO KOSZYKA</p>
+Świetny wybór! Dżemy doskonale komponują się
+z naszymi proteinowymi omletami. Czy chciałbyś do kompletu dodać
+<strong>Białko WPC80</strong> o smaku waniliowym do zrobienia fit
+gofrów?
+<div class="mt-3 flex gap-2">
+<button
+onclick="addCrossSellItem('protein', 'Smak Wanilia')" class="bg-sfdBlue
+text-white text-xs font-bold px-3 py-1.5 rounded-lg
+hover:bg-sfdBlue-hover transition-colors">
+Super pomysł, dodaj!
+</button>
+<button
+onclick="declineCrossSell('białko')" class="bg-slate-200 text-slate-700
+text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-300
+transition-colors">
+Innym razem
+</button>
+</div>
+</div>
+`);
+}
+}, 1000);
+}
+function addCrossSellItem(productKey, variant = "Standard") {
+const product = database[productKey];
+cart.push({
+id: product.id + '-' + Date.now(),
+key: productKey,
+name: product.name,
+price: product.price,
+variant: variant,
+img: product.img
+});
+updateCartUI();
+showCustomAlert("Zgoda!", `Dodano produkt powiązany:
+${product.name} do koszyka.`, 'success');
+appendBotMessage(`Świetna decyzja! Twój koszyk został
+powiększony o promocyjny produkt. Co robimy dalej? Chcesz dokupić coś
+jeszcze, czy klikamy "Przejdź do kasy"?`);
+}
+function declineCrossSell(itemName) {
+appendBotMessage(`Jasne, nie ma problemu! Kontynuujemy
+zakupy z obecnym koszykiem. Jeśli chcesz przejść dalej, użyj ciemnego
+przycisku po prawej stronie.`);
+}
+function updateCartUI() {
+const cartItemsContainer =
+document.getElementById('cart-items');
+const cartEmptyState =
+document.getElementById('cart-empty-state');
+const cartBadge = document.getElementById('cart-badge');
+const cartCountBadge =
+document.getElementById('cart-count-badge');
+const totalHeader =
+document.getElementById('cart-total-header');
+const subtotalLabel =
+document.getElementById('summary-subtotal');
+const totalLabel = document.getElementById('summary-total');
+if (cart.length === 0) {
+cartEmptyState.classList.remove('hidden');
+cartBadge.classList.add('opacity-0');
+cartCountBadge.innerText = "0 szt.";
+totalHeader.innerText = "0,00 zł";
+subtotalLabel.innerText = "0,00 zł";
+totalLabel.innerText = "0,00 zł";
+const itemsList =
+cartItemsContainer.querySelectorAll('.cart-item-row');
+itemsList.forEach(item => item.remove());
+return;
+}
+cartEmptyState.classList.add('hidden');
+cartBadge.classList.remove('opacity-0');
+cartBadge.innerText = cart.length;
+cartCountBadge.innerText = `${cart.length} szt.`;
+let totalSum = 0;
+const itemsList =
+cartItemsContainer.querySelectorAll('.cart-item-row');
+itemsList.forEach(item => item.remove());
+cart.forEach(item => {
+totalSum += item.price;
+const itemHtml = `
+<div class="cart-item-row flex items-center gap-3
+bg-slate-50 border border-slate-100 rounded-xl p-2.5 transition-all
+hover:border-slate-200">
+<img src="${item.img}" class="w-10 h-10
+rounded-md object-cover shadow-xs" alt="Product">
+<div class="flex-1 min-w-0">
+<h5 class="font-bold text-xs text-slate-800
+truncate">${item.name}</h5>
+<p class="text-[10px] text-slate-400
+font-medium">${item.variant}</p>
+</div>
+<div class="text-right shrink-0">
+<p class="text-xs font-bold
+text-sfdBlue">${item.price.toFixed(2)} zł</p>
+<button
+onclick="removeFromCart('${item.id}')" class="text-slate-400
+hover:text-red-500 text-[10px] underline font-medium
+transition-colors">Usuń</button>
+</div>
+</div>
+`;
+cartItemsContainer.insertAdjacentHTML('beforeend',
+itemHtml);
+});
+totalHeader.innerText = `${totalSum.toFixed(2)} zł`;
+subtotalLabel.innerText = `${totalSum.toFixed(2)} zł`;
+totalLabel.innerText = `${totalSum.toFixed(2)} zł`;
+}
+function removeFromCart(itemId) {
+cart = cart.filter(item => item.id !== itemId);
+updateCartUI();
+}
+function resetChat() {
+const chatBox = document.getElementById('chat-box');
+chatBox.innerHTML = `
+<div class="flex gap-3 max-w-[85%]">
+<div class="w-8 h-8 rounded-full bg-sfdBlue flex
+items-center justify-center text-white text-xs shrink-0 self-end mb-1">
+<i class="fa-solid fa-dumbbell"></i>
+</div>
+<div class="bg-white rounded-2xl rounded-bl-none
+p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm">
+<p class="font-semibold text-sfdBlue text-xs
+uppercase tracking-wider mb-1">Konsultant SFD</p>
+Cześć! Czat został zresetowany. W czym mogę Ci
+pomóc tym razem? Możesz wybrać jedną z sugestii poniżej lub wpisać
+własne pytanie.
+</div>
+</div>
+`;
+cart = [];
+updateCartUI();
+}
+function checkoutSimulation() {
+if (cart.length === 0) {
+showCustomAlert("Twój koszyk jest pusty!", "Nie masz
+jeszcze żadnych produktów do zamówienia. Dodaj produkty za pomocą
+rozmowy z naszym Agentem AI!", "warning");
+return;
+}
+showCustomAlert(
+"Finalizacja Zamówienia SFD",
+`Twoje zamówienie na kwotę
+${document.getElementById('summary-total').innerText} zostało pomyślnie
+zasymulowane do wysyłki!\n\nGratulacje, pomyślne skrócenie ścieżki
+zakupowej z poziomu czatu!`,
+'info'
+);
+cart = [];
+updateCartUI();
+appendBotMessage(`Dziękuję za zakupy w SFD! Twoje zamówienie
+zostało przekazane do realizacji. Czy pomóc Ci w wyborze czegoś
+jeszcze?`);
+}
+</script>
+</body>
+</html>

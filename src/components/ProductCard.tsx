@@ -1,0 +1,109 @@
+'use client';
+
+import { useState } from 'react';
+import type { Product } from '@/data/products';
+
+interface ProductCardProps {
+  product: Product;
+  onAddToCart: (productId: string, variantIndex: number) => void;
+}
+
+export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  const [selectedVariant, setSelectedVariant] = useState(0);
+  const [isAdded, setIsAdded] = useState(false);
+
+  const currentVariant = product.variants[selectedVariant];
+
+  const handleAdd = () => {
+    onAddToCart(product.id, selectedVariant);
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 1500);
+  };
+
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row gap-3 animate-fade-up">
+      {/* Miniatura produktu */}
+      <div className="relative shrink-0 mx-auto sm:mx-0">
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="w-16 h-16 rounded-lg object-cover shadow-sm"
+          width={64}
+          height={64}
+        />
+        <span className="absolute -top-1.5 -right-1.5 bg-sfd-blue text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
+          {currentVariant.price.toFixed(2).replace('.', ',')} zł
+        </span>
+      </div>
+
+      {/* Dane produktu */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold text-sfd-blue uppercase tracking-wider">
+          {product.brand}
+        </p>
+        <h4 className="font-bold text-slate-800 text-sm leading-tight">
+          {product.name}
+        </h4>
+        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+          {product.description}
+        </p>
+
+        {/* Wariant + Przycisk */}
+        <div className="mt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          {product.variants.length > 1 && (
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase">
+                Wariant:
+              </label>
+              <select
+                value={selectedVariant}
+                onChange={(e) => setSelectedVariant(Number(e.target.value))}
+                className="bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-sfd-blue focus:outline-none"
+              >
+                {product.variants.map((v, i) => (
+                  <option key={i} value={i}>
+                    {v.label} – {v.price.toFixed(2).replace('.', ',')} zł
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAdd}
+              disabled={isAdded}
+              className={`text-white text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                isAdded
+                  ? 'bg-emerald-500 cursor-default'
+                  : 'bg-sfd-gradient-btn hover:opacity-90'
+              }`}
+            >
+              {isAdded ? (
+                <>
+                  <i className="fa-solid fa-check" />
+                  Dodano!
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-cart-plus" />
+                  Dodaj do koszyka
+                </>
+              )}
+            </button>
+
+            <a
+              href={product.shopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sfd-blue hover:text-sfd-dark text-xs font-medium flex items-center gap-1 whitespace-nowrap"
+            >
+              <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
+              Sklep SFD
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

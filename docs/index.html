@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SFD AI Konsultant – Wirtualny Doradca | sklep.sfd.pl</title>
+  <meta name="description" content="Wirtualny konsultant SFD – doradztwo żywieniowe, obsługa klienta i zakupy bezpośrednio z czatu na sklep.sfd.pl">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sfd: {
+              blue:    '#0c2af8',
+              dark:    '#00228f',
+              navy:    '#0a1a6b',
+              light:   '#e8ecff',
+              accent:  '#ff5c00',
+            }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ===== SCROLLBAR ===== */
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 10px; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes dotBounce {
+      0%,80%,100% { transform:translateY(0); }
+      40%          { transform:translateY(-5px); }
+    }
+    @keyframes badgePop {
+      0%  { transform:scale(1); }
+      30% { transform:scale(1.4); }
+      60% { transform:scale(0.88); }
+      80% { transform:scale(1.1); }
+      100%{ transform:scale(1); }
+    }
+    @keyframes slideInRight {
+      from { transform:translateX(110%); opacity:0; }
+      to   { transform:translateX(0);    opacity:1; }
+    }
+    @keyframes slideOutRight {
+      from { transform:translateX(0);    opacity:1; }
+      to   { transform:translateX(110%); opacity:0; }
+    }
+    @keyframes fabPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(12,42,248,0.4); }
+      50%     { box-shadow: 0 0 0 14px rgba(12,42,248,0); }
+    }
+
+    .msg-anim   { animation: fadeUp .28s ease both; }
+    .dot1 { animation: dotBounce 1.2s infinite .0s; }
+    .dot2 { animation: dotBounce 1.2s infinite .18s; }
+    .dot3 { animation: dotBounce 1.2s infinite .36s; }
+    .badge-pop  { animation: badgePop .45s ease; }
+    .fab-pulse  { animation: fabPulse 2s ease-in-out infinite; }
+
+    /* ===== CHAT WIDGET ===== */
+    #sfd-widget {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9999;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* FAB button */
+    #sfd-fab {
+      width: 62px; height: 62px;
+      background: linear-gradient(135deg, #0c2af8 0%, #00228f 100%);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(12,42,248,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    #sfd-fab:hover { transform: scale(1.08); box-shadow: 0 12px 36px rgba(12,42,248,.55); }
+    #sfd-fab:active { transform: scale(0.96); }
+
+    /* Chat panel */
+    #sfd-panel {
+      position: absolute;
+      bottom: 76px; right: 0;
+      width: 400px;
+      max-height: 680px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.18), 0 4px 16px rgba(0,0,0,.08);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transform-origin: bottom right;
+    }
+    #sfd-panel.open  { animation: slideInRight .32s cubic-bezier(.22,.68,0,1.2) both; }
+    #sfd-panel.close { animation: slideOutRight .25s ease both; }
+    #sfd-panel.hidden { display: none !important; }
+
+    /* Cart drawer */
+    #sfd-cart {
+      position: absolute;
+      bottom: 76px; right: 0;
+      width: 340px;
+      max-height: 600px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.18);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    #sfd-cart.open  { animation: slideInRight .32s cubic-bezier(.22,.68,0,1.2) both; }
+    #sfd-cart.close { animation: slideOutRight .25s ease both; }
+    #sfd-cart.hidden { display: none !important; }
+
+    /* Product card */
+    .prod-card {
+      background: #f8f9ff;
+      border: 1px solid #e0e4ff;
+      border-radius: 14px;
+      transition: box-shadow .2s, transform .2s;
+      overflow: hidden;
+    }
+    .prod-card:hover { box-shadow: 0 6px 20px rgba(12,42,248,.12); transform: translateY(-2px); }
+
+    /* Suggestion pills */
+    .pill {
+      background: #f0f3ff;
+      border: 1px solid #dce1ff;
+      color: #1a2a8f;
+      transition: all .18s;
+      cursor: pointer;
+    }
+    .pill:hover { background: #0c2af8; color: #fff; border-color: #0c2af8; }
+
+    /* User bubble */
+    .user-bubble {
+      background: linear-gradient(135deg, #0c2af8, #00228f);
+      color: #fff;
+      border-radius: 18px 18px 4px 18px;
+    }
+
+    /* Bot bubble */
+    .bot-bubble {
+      background: #fff;
+      border: 1px solid #e8ecff;
+      border-radius: 4px 18px 18px 18px;
+      box-shadow: 0 2px 8px rgba(12,42,248,.06);
+    }
+
+    /* Cart item */
+    .cart-row {
+      transition: background .18s;
+      border-radius: 12px;
+    }
+    .cart-row:hover { background: #f0f4ff; }
+
+    /* Alert overlay */
+    #sfd-alert {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(4px);
+      z-index: 99999;
+      padding: 16px;
+    }
+    #sfd-alert:not(.hidden) {
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Fullscreen split mode */
+    #sfd-widget.fullscreen-mode {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      display: flex !important;
+      flex-direction: row;
+      background: #f8fafc;
+    }
+    #sfd-widget.fullscreen-mode > #sfd-panel, 
+    #sfd-widget.fullscreen-mode > #sfd-cart {
+      position: relative !important;
+      inset: auto !important;
+      flex: 1 !important;
+      width: 50% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      border-radius: 0 !important;
+      transform: scale(1) !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      display: flex !important;
+      box-shadow: none !important;
+    }
+    #sfd-widget.fullscreen-mode > #sfd-panel {
+      border-right: 1px solid #e2e8f0;
+    }
+    #sfd-widget.fullscreen-mode > #sfd-fab,
+    #sfd-widget.fullscreen-mode > .fab-label-container {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      #sfd-widget.fullscreen-mode {
+        flex-direction: column;
+      }
+      #sfd-widget.fullscreen-mode > #sfd-panel, 
+      #sfd-widget.fullscreen-mode > #sfd-cart {
+        width: 100% !important;
+        height: 50% !important;
+        max-height: 50% !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #sfd-panel { width: calc(100vw - 32px); right: 0; }
+      #sfd-cart  { width: calc(100vw - 32px); right: 0; }
+      #sfd-widget { bottom: 16px; right: 16px; }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 min-h-screen font-sans">
+
+  <!-- ======================================================
+       DEMO PAGE BACKGROUND (symulacja sklep.sfd.pl)
+  ====================================================== -->
+  <div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Nagłówek imitujący sklep.sfd.pl -->
+    <header class="bg-white rounded-2xl shadow-sm mb-6 p-4 flex items-center justify-between border border-slate-100">
+      <div class="flex items-center gap-3">
+        <div class="bg-sfd-blue text-white font-black text-2xl px-3 py-1 rounded-lg tracking-tighter" style="background:#0c2af8">
+          SFD
+        </div>
+        <div>
+          <div class="text-xs text-slate-400 uppercase tracking-widest font-semibold">sklep.sfd.pl</div>
+          <div class="text-sm font-bold text-slate-700">Suplementy · Odżywki · Zdrowa żywność</div>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-green-200">
+        <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-ping"></span>
+        AI Konsultant aktywny
+      </div>
+    </header>
+
+    <!-- Info card -->
+    <div class="bg-white/80 backdrop-blur rounded-2xl border border-blue-100 p-6 mb-6 shadow-sm">
+      <h1 class="text-2xl font-black text-slate-800 mb-2">
+        🤖 Prototyp: Wirtualny Asystent Sprzedaży SFD
+      </h1>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        Ten widget czatu jest zaprojektowany jako <strong>nakładka na sklep.sfd.pl</strong>. 
+        Kliknij przycisk <strong class="text-blue-600">SFD AI</strong> w prawym dolnym rogu, aby otworzyć konsultanta.
+        Agent zna prawdziwy asortyment SFD, prowadzi do zakupu i stosuje zasady bezpieczeństwa zdrowotnego.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs">
+        <span class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-semibold">✅ Prawdziwe produkty SFD</span>
+        <span class="bg-orange-50 text-orange-700 border border-orange-200 px-3 py-1 rounded-full font-semibold">🛒 Koszyk w czasie rzeczywistym</span>
+        <span class="bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full font-semibold">⚠️ Ochrona zdrowotna</span>
+        <span class="bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded-full font-semibold">🎁 System poleceń -15%</span>
+        <span class="bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 rounded-full font-semibold">🔄 Cross-selling</span>
+      </div>
+    </div>
+
+    <!-- Produkty (demo siatka) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center opacity-70">
+        <div class="w-full h-28 bg-blue-50 rounded-lg mb-2 flex items-center justify-center text-3xl">🥛</div>
+        <div class="text-xs font-bold text-slate-700">SFD WPC 82 Instant</div>
+        <div class="text-xs text-slate-400">od 84 zł / 700g</div>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center opacity-70">
+        <div class="w-full h-28 bg-orange-50 rounded-lg mb-2 flex items-center justify-center text-3xl">🔥</div>
+        <div class="text-xs font-bold text-slate-700">SFD Fat Burner</div>
+        <div class="text-xs text-slate-400">od 32 zł / 100 kaps.</div>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center opacity-70">
+        <div class="w-full h-28 bg-red-50 rounded-lg mb-2 flex items-center justify-center text-3xl">🍓</div>
+        <div class="text-xs font-bold text-slate-700">AllNutrition Frulove</div>
+        <div class="text-xs text-slate-400">od 23 zł / 1000g</div>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center opacity-70">
+        <div class="w-full h-28 bg-yellow-50 rounded-lg mb-2 flex items-center justify-center text-3xl">💊</div>
+        <div class="text-xs font-bold text-slate-700">SFD L-Carnitine</div>
+        <div class="text-xs text-slate-400">od 29 zł / 60 kaps.</div>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-slate-400 mt-8">
+      👆 Kliknij przycisk <strong>SFD AI</strong> w prawym dolnym rogu →
+    </p>
+  </div>
+
+  <!-- ======================================================
+       ALERT MODAL
+  ====================================================== -->
+  <div id="sfd-alert" class="hidden">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl border border-slate-100">
+      <div id="alert-icon" class="w-14 h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-2xl mx-auto mb-3">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <h4 id="alert-title" class="text-center font-black text-slate-800 text-base mb-1">Sukces!</h4>
+      <p id="alert-msg" class="text-center text-slate-500 text-sm mb-5 leading-relaxed"></p>
+      <button onclick="closeAlert()" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all"
+        style="background: linear-gradient(135deg, #0c2af8, #00228f);">
+        Rozumiem, super!
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       FLOATING WIDGET
+  ====================================================== -->
+  <div id="sfd-widget">
+
+    <!-- KOSZYK DRAWER -->
+    <div id="sfd-cart" class="hidden">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between" style="background: linear-gradient(135deg,#0c2af8,#00228f)">
+        <div class="flex items-center gap-2 text-white">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="font-bold text-sm">Twój Koszyk SFD</span>
+          <span id="c-count" class="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-semibold">0 szt.</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="toggleFullscreen()" class="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all text-xs" title="Pełny ekran">
+            <i class="fa-solid fa-expand" id="fs-icon-cart"></i>
+          </button>
+          <button onclick="toggleCart()" class="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-2" id="cart-list">
+        <div id="cart-empty" class="text-center py-10">
+          <div class="text-5xl mb-3">🛒</div>
+          <p class="text-slate-400 text-sm font-medium">Koszyk jest pusty</p>
+          <p class="text-slate-300 text-xs mt-1">Porozmawiaj z agentem, aby dodać produkty!</p>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-100">
+        <div class="bg-blue-50 rounded-xl p-3 mb-3">
+          <div class="flex justify-between text-xs text-slate-500 mb-1">
+            <span>Wartość produktów:</span><span id="c-subtotal">0,00 zł</span>
+          </div>
+          <div class="flex justify-between text-xs text-green-600 font-medium mb-2">
+            <span>Dostawa:</span><span>🎁 Gratis (Akcja SFD)</span>
+          </div>
+          <div class="border-t border-blue-100 pt-2 flex justify-between font-black text-slate-800">
+            <span>Do zapłaty:</span>
+            <span id="c-total" class="text-sfd-blue" style="color:#0c2af8">0,00 zł</span>
+          </div>
+        </div>
+        <button onclick="checkout()" class="w-full py-3.5 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
+          style="background: linear-gradient(135deg,#121212,#2d2d2d);">
+          Przejdź do kasy <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div id="sfd-panel" class="hidden">
+      <!-- Header -->
+      <div class="p-4 flex items-center justify-between shrink-0" style="background:linear-gradient(135deg,#0a1a6b,#0c2af8)">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center border border-white/30">
+              <i class="fa-solid fa-robot text-white text-sm"></i>
+            </div>
+            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0a1a6b]"></span>
+          </div>
+          <div>
+            <div class="text-white font-bold text-sm">Konsultant SFD</div>
+            <div class="text-blue-200 text-xs flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block"></span>
+              Gotowy do pomocy
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="toggleCart()" class="relative text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-bag-shopping text-base"></i>
+            <span id="fab-badge-chat" class="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center opacity-0">0</span>
+          </button>
+          <button onclick="toggleFullscreen()" class="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all text-xs" title="Pełny ekran">
+            <i class="fa-solid fa-expand" id="fs-icon-chat"></i>
+          </button>
+          <button onclick="resetChat()" class="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all text-xs" title="Zresetuj czat">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+          <button onclick="closePanel()" class="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="chat-box" class="flex-1 overflow-y-auto custom-scroll p-4 space-y-3 bg-slate-50/60">
+        <!-- Welcome msg injected by JS -->
+      </div>
+
+      <!-- Typing indicator -->
+      <div id="typing" class="hidden px-4 py-2 bg-slate-50/60">
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <div class="flex gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 dot1 inline-block"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 dot2 inline-block"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 dot3 inline-block"></span>
+          </div>
+          <span>Konsultant analizuje ofertę SFD...</span>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div class="px-3 py-2.5 bg-white border-t border-slate-100">
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-1.5">Popularne pytania:</p>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold" onclick="sendMsg('Chcę schudnąć – co polecacie? 🎯')">🎯 Chcę schudnąć</button>
+          <button class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold" onclick="sendMsg('Szukam dobrego białka WPC 🥛')">🥛 Białko WPC</button>
+          <button class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold" onclick="sendMsg('Frulove dżemy – jakie smaki? 🍓')">🍓 Dżemy Frulove</button>
+          <button class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold" onclick="sendMsg('Buduję masę – kreatyna i białko 💪')">💪 Masa i kreatyna</button>
+          <button class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold" onclick="sendMsg('Mam nadciśnienie – co brać? ⚠️')">⚠️ Mam nadciśnienie</button>
+          <button class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold" onclick="sendMsg('Gdzie jest moje zamówienie? 📦')">📦 Moje zamówienie</button>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="p-3 bg-white border-t border-slate-100">
+        <form id="chat-form" onsubmit="handleSubmit(event)" class="flex gap-2">
+          <input id="chat-input" type="text"
+            placeholder="Napisz pytanie o suplementy SFD..."
+            class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+            style="--tw-ring-color: #0c2af8;"
+            required>
+          <button type="submit"
+            class="px-4 py-2.5 rounded-xl font-bold text-white text-sm flex items-center gap-1.5 transition-all hover:opacity-90"
+            style="background: linear-gradient(135deg,#0c2af8,#00228f);">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- FAB BUTTON -->
+    <button id="sfd-fab" onclick="togglePanel()" class="fab-pulse" title="Konsultant SFD AI">
+      <div class="flex flex-col items-center">
+        <i class="fa-solid fa-robot text-white text-xl"></i>
+      </div>
+      <!-- Badge -->
+      <span id="fab-badge" class="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-white opacity-0 px-1">0</span>
+    </button>
+    <!-- FAB label -->
+    <div class="text-center mt-1.5 fab-label-container">
+      <span class="text-[10px] font-black text-slate-600 bg-white px-2 py-0.5 rounded-full shadow-sm border border-slate-100">SFD AI</span>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       JAVASCRIPT
+  ====================================================== -->
+  <script>
+  // ==================== BAZA PRODUKTÓW SFD (prawdziwe produkty) ====================
+  const db = {
+    wpc82: {
+      id: 'wpc82',
+      name: 'WPC 82 Instant 700g',
+      brand: 'SFD NUTRITION',
+      desc: 'Koncentrat białka serwatkowego 82%. Szybka regeneracja i budowa mięśni. Idealne na masę i redukcję.',
+      price: 84.00,
+      unit: '700g',
+      img: 'https://sklep.sfd.pl/produkt_img/63a2b12b23d91494753791b86bcb7f1aWPC_82_Instant_i43718_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_WPC_82_Instant-opis43718.html',
+      variants: [
+        { label: 'Ciasteczko – 84,00 zł', price: 84.00 },
+        { label: 'Wanilia – 84,00 zł',    price: 84.00 },
+        { label: 'Słony Karmel – 84,00 zł', price: 84.00 },
+        { label: 'Biała Czekolada – 84,00 zł', price: 84.00 },
+      ],
+      selectId: 'sel-wpc82',
+      crossSell: 'shaker',
+    },
+
+    wpcDelicious: {
+      id: 'wpcDelicious',
+      name: 'Whey Delicious Protein 700g',
+      brand: 'ALLNUTRITION',
+      desc: 'Białko z dodatkiem maślanki – wyjątkowo kremowe i smaczne. 700g wybornego smaku.',
+      price: 79.00,
+      unit: '700g',
+      img: 'https://sklep.sfd.pl/produkt_img/63346a69f356acf3e61af25cd9b503f9Whey_Delicious_Protein_i38278_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/ALLNUTRITION_Whey_Delicious_Protein-opis38278.html',
+      variants: [
+        { label: 'Karmel – 79,00 zł',       price: 79.00 },
+        { label: 'Czekolada – 79,00 zł',     price: 79.00 },
+        { label: 'Wanilia – 79,00 zł',       price: 79.00 },
+      ],
+      selectId: 'sel-wpcD',
+      crossSell: 'shaker',
+    },
+
+    fatburner: {
+      id: 'fatburner',
+      name: 'Zielona Kawa (Green Coffee)',
+      brand: 'SFD NUTRITION',
+      desc: 'Spalacz tłuszczu z ekstraktami roślinnymi, kofeiną i chromem. Przyspiesza metabolizm. 90 tabletek.',
+      price: 29.00,
+      unit: '90 tabletek',
+      img: 'https://sklep.sfd.pl/produkt_img/d62e7926dca531282b3bd6b30121b65aGreen_Coffee_i40175_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_Green_Coffee-opis40175.html',
+      variants: [
+        { label: '90 tabletek – 29,00 zł', price: 29.00 },
+      ],
+      selectId: 'sel-fb',
+      crossSell: 'wpc82',
+    },
+
+    thermoMax: {
+      id: 'thermoMax',
+      name: 'Tri Creatine Malate 250g',
+      brand: 'SFD NUTRITION',
+      desc: 'Jabłczan kreatyny w proszku. Zwiększa siłę, wytrzymałość i przyspiesza rozwój mięśni.',
+      price: 29.00,
+      unit: '250g',
+      img: 'https://sklep.sfd.pl/produkt_img/c91a321ebfad71ff31f23f55cfedeaeeTri_Creatine_Malate_i36354_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_Tri_Creatine_Malate-opis36354.html',
+      variants: [
+        { label: '250g – 29,00 zł', price: 29.00 },
+      ],
+      selectId: 'sel-thermo',
+      crossSell: 'wpc82',
+    },
+
+    carnitine: {
+      id: 'carnitine',
+      name: 'L-Karnityna 500 Forte Plus',
+      brand: 'Olimp',
+      desc: 'L-Karnityna bez stymulantów – bezpieczna dla serca. Wspiera spalanie tłuszczu na poziomie komórkowym.',
+      price: 87.00,
+      unit: '60 kapsułek',
+      img: 'https://sklep.sfd.pl/produkt_img/14c8f5ac8b62dd1d5d124448aef0edc0L-Karnityna_500_Forte_Plus_i817_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/Olimp_L-Karnityna_500_Forte_Plus-opis817.html',
+      variants: [
+        { label: '60 kapsułek – 87,00 zł',  price: 87.00 },
+      ],
+      selectId: 'sel-carn',
+      crossSell: 'frulove',
+    },
+
+    vitamins: {
+      id: 'vitamins',
+      name: 'VitaMax Complex Plus 60',
+      brand: 'SFD NUTRITION',
+      desc: 'Kompleksowy multiwitaminowy suplement dla sportowców. Witaminy A, C, D, E, B-kompleks + minerały.',
+      price: 29.00,
+      unit: '60 tabletek',
+      img: 'https://sklep.sfd.pl/produkt_img/8e6f468e97f3fd2146c69108f0bf2832VitaMax_Complex_Plus_i36841_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_VitaMax_Complex_Plus-opis36841.html',
+      variants: [
+        { label: '60 tabletek – 29,00 zł', price: 29.00 },
+      ],
+      selectId: 'sel-vit',
+      crossSell: null,
+    },
+
+    frulove: {
+      id: 'frulove',
+      name: 'FRULOVE In Jelly Cherry 1000g',
+      brand: 'ALLNUTRITION',
+      desc: 'Owocowa frużelina bez cukru – 80% owoców, słodzona erytrytolem. Hit diety redukcyjnej.',
+      price: 37.00,
+      unit: '1000g',
+      img: 'https://sklep.sfd.pl/produkt_img/94a7681c5390efabd7826337c7b82c28FRULOVE_In_Jelly_Cherry_i41934_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/ALLNUTRITION_FRULOVE_In_Jelly_Cherry_(Wisnia)-opis41934.html',
+      variants: [
+        { label: 'Truskawka – 37,00 zł',       price: 37.00 },
+        { label: 'Wiśnia – 37,00 zł',           price: 37.00 },
+        { label: 'Owoce Leśne – 37,00 zł',     price: 37.00 },
+      ],
+      stockOut: ['Truskawka'],
+      selectId: 'sel-jam',
+      crossSell: 'wpc82',
+    },
+
+    creatine: {
+      id: 'creatine',
+      name: 'Tri Creatine Malate 250g',
+      brand: 'SFD NUTRITION',
+      desc: 'Czysta kreatyna w proszku. Zwiększa siłę, wytrzymałość i przyspiesza rozwój mięśni.',
+      price: 29.00,
+      unit: '250g',
+      img: 'https://sklep.sfd.pl/produkt_img/c91a321ebfad71ff31f23f55cfedeaeeTri_Creatine_Malate_i36354_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_Tri_Creatine_Malate-opis36354.html',
+      variants: [
+        { label: 'Naturalny – 29,00 zł', price: 29.00 },
+      ],
+      selectId: 'sel-creat',
+      crossSell: 'wpc82',
+    },
+
+    shaker: {
+      id: 'shaker',
+      name: 'Shaker 1 sztuka',
+      brand: 'SFD NUTRITION',
+      desc: 'Ergonomiczny shaker z kulką mieszającą. Idealny do białka i odżywek. BPA-free.',
+      price: 12.00,
+      unit: '1 szt.',
+      img: 'https://sklep.sfd.pl/produkt_img/52020d128fc85d7d885ecd3469262adcShaker_i26176_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_Shaker-opis26176.html',
+      variants: [
+        { label: 'Niebieski – 12,00 zł', price: 12.00 },
+        { label: 'Czarny – 12,00 zł',   price: 12.00 },
+      ],
+      selectId: 'sel-shaker',
+      crossSell: null,
+    },
+
+    sosZero: {
+      id: 'sosZero',
+      name: 'Sos Zero Cinnamon Roll 425ml',
+      brand: 'WK DZIK',
+      desc: 'Pyszny słodki sos zero kalorii. Idealny do omletów i deserów.',
+      price: 20.00,
+      unit: '425ml',
+      img: 'https://sklep.sfd.pl/produkt_img/cc85f78f67c40a8e40c47528c504ee4fSos_Zero_Cinnamon_Roll_i43377_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/WK_DZIK_Sos_Zero_Cinnamon_Roll-opis43377.html',
+      variants: [
+        { label: 'Cinnamon Roll – 20,00 zł', price: 20.00 },
+      ],
+      selectId: 'sel-sos',
+      crossSell: 'frulove',
+    },
+
+    // ===================== REDUKCJA – ROZSZERZONA BAZA =====================
+
+    burn4all: {
+      id: 'burn4all',
+      name: 'Burn4ALL Extreme 120 kapsułek',
+      brand: 'ALLNUTRITION',
+      desc: 'Bestsellerowy spalacz wieloskładnikowy. L-karnityna + kofeina + ekstrakty roślinne. Mocna termogeneza i kontrola apetytu.',
+      price: 60.00,
+      unit: '120 kapsułek',
+      img: 'https://sklep.sfd.pl/produkt_img/bf77d3529373be69144cdcc9c111c552Burn4ALL_Extreme_i34859_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/ALLNUTRITION_Burn4ALL_Extreme-opis34859.html',
+      variants: [{ label: '120 kaps. – 60,00 zł', price: 60.00 }],
+      selectId: 'sel-b4all',
+      crossSell: 'lCarnitine',
+    },
+
+    lCarnitine: {
+      id: 'lCarnitine',
+      name: 'L-Carnitine Strong 120 kapsułek',
+      brand: 'SFD NUTRITION',
+      desc: 'Winian L-karnityny (LCLT) – najlepsza absorpcja. Transportuje FFA do mitochondriów. Idealna przed cardio z kofeiną.',
+      price: 40.00,
+      unit: '120 kapsułek',
+      img: 'https://sklep.sfd.pl/produkt_img/4c0e60537a4d31bd73d9cdbd147e61b0L-Carnitine_Strong_i40971_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_L-Carnitine_Strong-opis40971.html',
+      variants: [{ label: '120 kaps. – 40,00 zł', price: 40.00 }],
+      selectId: 'sel-lcar',
+      crossSell: 'burn4all',
+    },
+
+    claComplex: {
+      id: 'claComplex',
+      name: 'CLA + L-Carnitine + Green Tea 120 kaps.',
+      brand: 'ALLNUTRITION',
+      desc: 'Kompleks 3 w 1: CLA (skład ciała), L-karnityna (β-oksydacja), EGCG z zielonej herbaty (termogeneza). Synergia działania.',
+      price: 54.00,
+      unit: '120 kapsułek',
+      img: 'https://sklep.sfd.pl/produkt_img/963013c24eee64b82319ff6a6f1ea3d5CLA__L-Carnitine__Green_Tea_i36163_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/ALLNUTRITION_CLA_+_L-Carnitine_+_Green_Tea-opis36163.html',
+      variants: [{ label: '120 kaps. – 54,00 zł', price: 54.00 }],
+      selectId: 'sel-cla',
+      crossSell: 'lCarnitine',
+    },
+
+    bcaa: {
+      id: 'bcaa',
+      name: 'BCAA 500g',
+      brand: 'SFD NUTRITION',
+      desc: 'Aminokwasy BCAA 2:1:1 + L-glutamina + tauryna. Ochrona masy mięśniowej podczas deficytu kalorycznego.',
+      price: 50.00,
+      unit: '500g',
+      img: 'https://sklep.sfd.pl/produkt_img/43f2583aa63a9f808eec255d89c8639dBCAA_i32628_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_BCAA-opis32628.html',
+      variants: [{ label: '500g – 50,00 zł', price: 50.00 }],
+      selectId: 'sel-bcaa',
+      crossSell: 'wpc82',
+    },
+
+    omega3: {
+      id: 'omega3',
+      name: 'Omega 3 Strong 90 softgels',
+      brand: 'SFD NUTRITION',
+      desc: 'EPA + DHA o wysokiej czystości. Wsparcie hormonalne, redukcja stanów zapalnych, fundament zdrowia na każdej redukcji.',
+      price: 35.00,
+      unit: '90 softgels',
+      img: 'https://sklep.sfd.pl/produkt_img/ef98bade3bc696d896db0126d6242456Omega_3_Strong_i40345_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_Omega_3_Strong-opis40345.html',
+      variants: [{ label: '90 kaps. – 35,00 zł', price: 35.00 }],
+      selectId: 'sel-om3',
+      crossSell: null,
+    },
+
+    waterOut: {
+      id: 'waterOut',
+      name: 'Redox Water Out 120 kapsułek',
+      brand: 'ALLNUTRITION',
+      desc: 'Naturalny kompleks: pokrzywa, żurawina, mniszek lekarski + BioPerine®. Eliminacja nadmiaru wody. BEZ kofeiny.',
+      price: 45.00,
+      unit: '120 kapsułek',
+      img: 'https://sklep.sfd.pl/produkt_img/0d8664bea68eb1a27919b1818857acaeRedox_Water_Out_i43487_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/ALLNUTRITION_Redox_Water_Out-opis43487.html',
+      variants: [{ label: '120 kaps. – 45,00 zł', price: 45.00 }],
+      selectId: 'sel-wout',
+      crossSell: null,
+    },
+
+    wpi: {
+      id: 'wpi',
+      name: 'Isolate Protein WPI 908g',
+      brand: 'ALLNUTRITION',
+      desc: 'Izolat białka serwatkowego – 85%+ białka, minimalna zawartość tłuszczu i laktozy. Dla rygorystycznej redukcji i osób z nietolerancją laktozy.',
+      price: 120.00,
+      unit: '908g',
+      img: 'https://sklep.sfd.pl/produkt_img/37dabe12aece54837a7f8a586b9400f0Isolate_Protein_i33551_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/ALLNUTRITION_Isolate_Protein-opis33551.html',
+      variants: [
+        { label: 'Czekolada 908g – 120,00 zł', price: 120.00 },
+        { label: 'Wanilia 908g – 120,00 zł',  price: 120.00 },
+      ],
+      selectId: 'sel-wpi',
+      crossSell: 'lCarnitine',
+    },
+
+    fatBurnerSFD: {
+      id: 'fatBurnerSFD',
+      name: 'Fat Burner 100 kapsułek',
+      brand: 'SFD NUTRITION',
+      desc: 'Wieloskładnikowy spalacz SFD: L-karnityna 350mg + kofeina 200mg + synefryna + EGCG + pieprz cayenne + chrom. Sprawdzony i bezpieczny.',
+      price: 40.00,
+      unit: '100 kapsułek',
+      img: 'https://sklep.sfd.pl/produkt_img/c97f3ec1874d2522b12623affe832b2aFat_Burner_i36492_d250x250.jpg',
+      url: 'https://sklep.sfd.pl/SFD_NUTRITION_Fat_Burner-opis36492.html',
+      variants: [{ label: '100 kaps. – 40,00 zł', price: 40.00 }],
+      selectId: 'sel-fatb',
+      crossSell: 'lCarnitine',
+    },
+  };
+
+  // ==================== STAN ====================
+  let cart = [];
+  let panelOpen = false;
+  let cartOpen  = false;
+  let isFullscreen = false;
+
+  // ==================== INIT ====================
+  window.addEventListener('DOMContentLoaded', () => {
+    renderWelcome();
+    document.getElementById('chat-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
+    });
+  });
+
+  // ==================== PANEL CONTROL ====================
+  function togglePanel() {
+    panelOpen = !panelOpen;
+    const panel = document.getElementById('sfd-panel');
+    if (panelOpen) {
+      panel.classList.remove('hidden','close');
+      panel.classList.add('open');
+      document.getElementById('chat-input').focus();
+      if (cartOpen) { cartOpen = false; hideEl('sfd-cart'); }
+    } else {
+      closePanel();
+    }
+  }
+
+  function closePanel() {
+    panelOpen = false;
+    const panel = document.getElementById('sfd-panel');
+    panel.classList.remove('open');
+    panel.classList.add('close');
+    setTimeout(() => { panel.classList.add('hidden'); panel.classList.remove('close'); }, 240);
+  }
+
+  function toggleCart() {
+    cartOpen = !cartOpen;
+    const el = document.getElementById('sfd-cart');
+    if (cartOpen) {
+      el.classList.remove('hidden','close');
+      el.classList.add('open');
+      if (panelOpen) { closePanel(); panelOpen = false; }
+    } else {
+      el.classList.remove('open');
+      el.classList.add('close');
+      setTimeout(() => { el.classList.add('hidden'); el.classList.remove('close'); }, 240);
+    }
+  }
+
+  function hideEl(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('open'); el.classList.add('close');
+    setTimeout(() => { el.classList.add('hidden'); el.classList.remove('close'); }, 240);
+  }
+
+  function toggleFullscreen() {
+    isFullscreen = !isFullscreen;
+    const widget = document.getElementById('sfd-widget');
+    const panel = document.getElementById('sfd-panel');
+    const cartEl = document.getElementById('sfd-cart');
+    const iconChat = document.getElementById('fs-icon-chat');
+    const iconCart = document.getElementById('fs-icon-cart');
+
+    if (isFullscreen) {
+      widget.classList.add('fullscreen-mode');
+      
+      // Ensure both are part of the DOM flow (remove hidden class temporarily)
+      panel.classList.remove('hidden');
+      cartEl.classList.remove('hidden');
+
+      iconChat.classList.replace('fa-expand', 'fa-compress');
+      if(iconCart) iconCart.classList.replace('fa-expand', 'fa-compress');
+    } else {
+      widget.classList.remove('fullscreen-mode');
+      iconChat.classList.replace('fa-compress', 'fa-expand');
+      if(iconCart) iconCart.classList.replace('fa-compress', 'fa-expand');
+      
+      // Restore standard visibility state based on variables
+      if (cartOpen) {
+        panel.classList.add('hidden');
+        cartEl.classList.remove('hidden', 'close');
+        cartEl.classList.add('open');
+      } else if (panelOpen) {
+        cartEl.classList.add('hidden');
+        panel.classList.remove('hidden', 'close');
+        panel.classList.add('open');
+      } else {
+        panel.classList.add('hidden');
+        cartEl.classList.add('hidden');
+      }
+    }
+  }
+
+  // ==================== MESSAGES ====================
+  function renderWelcome() {
+    appendBot(`
+      <div class="mb-2">
+        <span class="text-[9px] font-bold text-white px-1.5 py-0.5 rounded-md tracking-wider uppercase shadow-sm" style="background:linear-gradient(135deg,#0c2af8,#00228f)">PREZENTACJA DEMO</span>
+      </div>
+      Witaj! Jestem prototypem <strong>AI Shopping Assistanta</strong> zaprojektowanym dla sklepu SFD. 🤖💙<br><br>
+      Mój cel to podniesienie konwersji (CR) i ułatwienie klientom wyboru produktów, dzięki automatyzacji doradztwa w oparciu o najnowsze wytyczne naukowe (ISSN 2025).<br><br>
+      👇 <strong>Przetestuj moje możliwości:</strong>
+      <div class="mt-3 flex flex-col gap-1.5">
+        <button onclick="sendMsg('Chcę schudnąć / redukcja')" class="text-left bg-white border border-slate-200 hover:border-blue-300 p-2 rounded-lg text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-2 shadow-sm">
+          <span class="bg-blue-50 text-blue-600 w-6 h-6 rounded flex items-center justify-center text-sm">🔥</span> 
+          Inteligentny system redukcji
+        </button>
+        <button onclick="sendMsg('Jakie polecasz białko?')" class="text-left bg-white border border-slate-200 hover:border-blue-300 p-2 rounded-lg text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-2 shadow-sm">
+          <span class="bg-blue-50 text-blue-600 w-6 h-6 rounded flex items-center justify-center text-sm">🥩</span> 
+          Rekomendacje Białka
+        </button>
+        <button onclick="sendMsg('Szukam dżemów bez cukru')" class="text-left bg-white border border-slate-200 hover:border-blue-300 p-2 rounded-lg text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-2 shadow-sm">
+          <span class="bg-blue-50 text-blue-600 w-6 h-6 rounded flex items-center justify-center text-sm">🍓</span> 
+          Logika Cross-sellowa (Frulove)
+        </button>
+        <button onclick="sendMsg('Mam chore serce, czy spalacz jest ok?')" class="text-left bg-white border border-slate-200 hover:border-red-300 p-2 rounded-lg text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-2 shadow-sm">
+          <span class="bg-red-50 text-red-600 w-6 h-6 rounded flex items-center justify-center text-sm">⚠️</span> 
+          Bramka Medyczna (Safety First)
+        </button>
+      </div>
+    `);
+  }
+
+  function appendUser(text) {
+    const box = document.getElementById('chat-box');
+    box.insertAdjacentHTML('beforeend', `
+      <div class="flex justify-end msg-anim">
+        <div class="user-bubble px-4 py-2.5 text-sm max-w-[85%]">${escHtml(text)}</div>
+      </div>
+    `);
+    scrollChat();
+  }
+
+  function appendBot(html) {
+    const box = document.getElementById('chat-box');
+    box.insertAdjacentHTML('beforeend', `
+      <div class="flex gap-2 msg-anim">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 self-end" style="background:linear-gradient(135deg,#0c2af8,#00228f)">
+          <i class="fa-solid fa-robot text-white text-[10px]"></i>
+        </div>
+        <div class="bot-bubble px-3.5 py-2.5 text-sm max-w-[90%] text-slate-800 leading-relaxed">${html}</div>
+      </div>
+    `);
+    scrollChat();
+  }
+
+  function scrollChat() {
+    const b = document.getElementById('chat-box');
+    b.scrollTop = b.scrollHeight;
+  }
+
+  function showTyping(v) {
+    document.getElementById('typing').classList.toggle('hidden', !v);
+    scrollChat();
+  }
+
+  function escHtml(t) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(t));
+    return d.innerHTML;
+  }
+
+  // ==================== SUBMIT ====================
+  function sendMsg(text) {
+    if (!panelOpen) togglePanel();
+    appendUser(text);
+    processQuery(text);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const inp = document.getElementById('chat-input');
+    const q = inp.value.trim();
+    if (!q) return;
+    inp.value = '';
+    appendUser(q);
+    processQuery(q);
+  }
+
+  // ==================== NORMALIZE ====================
+  function n(s) {
+    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  // ==================== PROCESS QUERY ====================
+  function processQuery(query) {
+    showTyping(true);
+    const q = n(query);
+
+    setTimeout(() => {
+      showTyping(false);
+
+      // 1. MEDYCZNE – PRIORYTET ABSOLUTNY
+      if (q.match(/cisni|nadcisni|serc|arytmi|udar|chorob|cukrzyc|kardiolog|epilep|epilepsj|leki na|przyjm.*lek|choruj/)) {
+        medicalWarning();
+
+      // 2. DŻEMY / FRULOVE
+      } else if (q.match(/dzem|frulove|fruzelin|galaret|konfitur|słodko|slodko|bez cukru.*owoc|owoc.*bez cukru/)) {
+        jamResponse();
+
+      // 2.5 DLACZEGO POLECASZ (WYJAŚNIENIE NAUKOWE)
+      } else if (q.match(/dlaczego.*(burn4all|karnityn|cla|bcaa|omega|water out|izolat|wpi|wpc|kreatyn|fat burner|białk|bialk|produkt)/)) {
+        explainProductResponse(q);
+
+      // 3a. REDUKCJA – SUBFLOW: POCZĄTKUJĄCY
+      } else if (q.match(/dopiero zaczynam|jestem poczatkujac|startuj.*redukcj|po raz pierws.*redukcj/)) {
+        weightLossBeginnerResponse();
+
+      // 3b. REDUKCJA – SUBFLOW: ZAAWANSOWANY
+      } else if (q.match(/trenu.*regularni|regularni.*trenu|zaawansowan.*redukcj|doswiadczon.*redukcj/)) {
+        weightLossAdvancedResponse();
+
+      // 3c. REDUKCJA – SUBFLOW: CARDIO
+      } else if (q.match(/glownie cardio|cardio glownie|trenu.*cardio|bieganie.*reduk|aerob.*reduk|rower.*reduk/)) {
+        weightLossCardioResponse();
+
+      // 3d. REDUKCJA – SUBFLOW: SIŁOWNIA
+      } else if (q.match(/silowni.*reduk|reduk.*silowni|trening silowy|trening.*silow|liftin.*reduk/)) {
+        weightLossStrengthResponse();
+
+      // 3e. REDUKCJA – SUBFLOW: BEZ KOFEINY
+      } else if (q.match(/bez kofeiny|bez kofein|bez stymulant|kofe.*problem|wrażliw.*kofe|nie.*kofe.*chce/)) {
+        weightLossNoCaffeineResponse();
+
+      // 4. ODCHUDZANIE / REDUKCJA – GŁÓWNE WEJŚCIE
+      } else if (q.match(/schud|redukcj|odchudzani|spal.*tluszcz|tluszcz|kalori|deficyt|obes|otylo|chce.*szczupleJ|zgubi.*kilo/)) {
+        weightLossResponse();
+
+      // 5. BIAŁKO / WPC / ODŻYWKA
+      } else if (q.match(/bialk|wpc|protein|odżywk|odzywk|serwatk|aminokwas|masa mies|budow.*miesn/)) {
+        proteinResponse();
+
+      // 6. WITAMINY / ZDROWIE OGÓLNE
+      } else if (q.match(/witamin|mineral|multiwitamin|odpornosc|odporność|zdrowi|immun/)) {
+        vitaminResponse();
+
+      // 7. KREATYNA / TRENING / MASA
+      } else if (q.match(/kreaty|przedtrenin|pumpa|pre-wor|trening|silown|mas[ay]|masow|gainer|si[lł]a/)) {
+        trainingResponse();
+
+      // 8. ZAMÓWIENIE / DOSTAWA / ZWROT
+      } else if (q.match(/zamow|zamówi|dostaw|wysy[lł]|zwrot|reklamacj|gdzie.*paczk|status.*zamow/)) {
+        orderInfoResponse();
+
+      // 9. SOS ZERO / WODA BIAŁKOWA / NAPÓJ
+      } else if (q.match(/sos.?zero|woda.*bialko|bialko.*woda|napoj.*bialko|protein.?water|drink.*bialko/)) {
+        sosZeroResponse();
+
+      // 10. SHAKER / AKCESORIA
+      } else if (q.match(/shaker|bidon|mieszad|akcesori|pojemnik na/)) {
+        shakerResponse();
+
+      // 11. FALLBACK
+      } else {
+        fallbackResponse(query);
+      }
+    }, 750 + Math.random() * 400);
+  }
+
+  // ==================== RESPONSE BUILDERS ====================
+
+  function medicalWarning() {
+    appendBot(`
+      <div class="border-l-4 rounded-r-xl p-3 mb-3 text-xs leading-relaxed" style="border-color:#f59e0b;background:#fffbeb">
+        <p class="font-bold flex items-center gap-1.5 mb-1" style="color:#92400e">
+          <i class="fa-solid fa-triangle-exclamation"></i> WAŻNA INFORMACJA ZDROWOTNA
+        </p>
+        Twoje bezpieczeństwo jest dla nas priorytetem. Przy schorzeniach takich jak nadciśnienie, choroby serca, 
+        cukrzyca czy przy przyjmowaniu leków — <strong>kategorycznie zalecamy konsultację lekarską</strong> 
+        przed rozpoczęciem jakiejkolwiek suplementacji. Unikaj termogeników i stymulantów zawierających kofeinę.
+      </div>
+      Bezpieczną alternatywą dla osób z problemami sercowo-naczyniowymi jest <strong>L-Karnityna</strong> 
+      – wspiera metabolizm tłuszczów <em>bez</em> wpływu na ciśnienie i tętno:
+      ${productCard(db.carnitine)}
+    `);
+  }
+
+  function jamResponse() {
+    const prod = db.frulove;
+    // Frulove – Truskawka wyprzedana (demo braków)
+    appendBot(`
+      Świetny wybór! Seria <strong>AllNutrition Frulove In Jelly</strong> to absolutny hit w SFD — 
+      80% prawdziwych owoców, zero dodanego cukru, słodzona erytrytolem.<br><br>
+      <div class="mb-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-amber-800 font-medium">
+        <i class="fa-solid fa-circle-exclamation mr-1"></i>
+        Smak <em>Truskawka</em> jest chwilowo wyprzedany. Pozostałe smaki dostępne od ręki!
+      </div>
+      ${productCard(prod, true)}
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // HELPER: odznaka naukowa Grade A/B
+  // ——————————————————————————————————————————
+  function gradeTag(g) {
+    const cfg = {
+      A: { bg: '#16a34a', label: 'Grade A ✓' },
+      B: { bg: '#d97706', label: 'Grade B' },
+      C: { bg: '#9ca3af', label: 'Grade C' },
+    }[g] || { bg: '#6b7280', label: g };
+    return `<span style="background:${cfg.bg};color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;letter-spacing:.5px">${cfg.label}</span>`;
+  }
+
+  // ——————————————————————————————————————————
+  // HELPER: mini produkt w stacku
+  // ——————————————————————————————————————————
+  function miniProd(prod, grade, mechanism) {
+    return `
+      <div class="flex items-center gap-3 bg-white rounded-xl p-2.5 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer"
+           onclick="window.open('${prod.url}','_blank')">
+        <img src="${prod.img}" alt="${prod.name}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-50"
+             onerror="this.src='https://sklep.sfd.pl/gfx/img/favicon.png'">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 mb-0.5">
+            ${gradeTag(grade)}
+            <span class="text-[10px] text-slate-400">${prod.brand}</span>
+          </div>
+          <p class="text-xs font-bold text-slate-800 truncate">${prod.name}</p>
+          ${mechanism ? `<p class="text-[10px] text-slate-400 leading-tight mt-0.5">${mechanism}</p>` : ''}
+          <button onclick="event.stopPropagation(); sendMsg('Dlaczego polecasz: ${prod.name}?')" class="mt-1 text-[9px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1"><i class="fa-solid fa-microscope"></i> Jak to działa?</button>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="text-sm font-black" style="color:#0c2af8">${prod.price.toFixed(2).replace('.',',')} zł</p>
+          <button onclick="event.stopPropagation(); addToCart('${prod.id}')" 
+            class="mt-1 text-[9px] font-bold text-white px-2 py-1 rounded-lg transition-all hover:opacity-80"
+            style="background:#0c2af8">+ Koszyk</button>
+        </div>
+      </div>`;
+  }
+
+  // ——————————————————————————————————————————
+  // HELPER: stack card
+  // ——————————————————————————————————————————
+  function stackCard(title, icon, budget, tagColor, tagText, items, footer) {
+    return `
+      <div class="rounded-xl border-2 overflow-hidden mb-3" style="border-color:${tagColor}20">
+        <div class="flex items-center justify-between px-3 py-2" style="background:${tagColor}15">
+          <div class="flex items-center gap-2">
+            <span class="text-base">${icon}</span>
+            <span class="font-bold text-sm text-slate-800">${title}</span>
+          </div>
+          <span class="text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style="background:${tagColor}">${tagText}</span>
+        </div>
+        <div class="p-2.5 space-y-2 bg-slate-50/50">
+          ${items}
+        </div>
+        <div class="px-3 py-2 flex items-center justify-between" style="background:${tagColor}10">
+          <span class="text-[10px] text-slate-500">${footer}</span>
+          <span class="text-xs font-black" style="color:${tagColor}">~${budget} zł/mies.</span>
+        </div>
+      </div>`;
+  }
+
+  // ——————————————————————————————————————————
+  // GŁÓWNY FLOW REDUKCJI
+  // ——————————————————————————————————————————
+  function weightLossResponse() {
+    const scienceBar = `
+      <div class="rounded-xl border border-blue-200 p-3 mb-3 text-xs" style="background:#eff6ff">
+        <p class="font-bold text-blue-800 mb-2 flex items-center gap-1.5">🔬 Hierarchia naukowa suplementacji na redukcji <span style="font-size:9px;background:#1d4ed8;color:#fff;padding:1px 5px;border-radius:4px">ISSN 2025</span></p>
+        <div class="space-y-1.5">
+          <div class="flex items-start gap-2">${gradeTag('A')} <div><span class="font-semibold text-slate-800">Białko WPC/WPI</span> <span class="text-slate-400">– chroni mięśnie, efekt termiczny 25–30%, najwyższa sytość</span></div></div>
+          <div class="flex items-start gap-2">${gradeTag('A')} <div><span class="font-semibold text-slate-800">Kreatyna</span> <span class="text-slate-400">– zachowanie siły i FFM, wyższy RMR (ISSN 2025)</span></div></div>
+          <div class="flex items-start gap-2">${gradeTag('B')} <div><span class="font-semibold text-slate-800">Kofeina + EGCG</span> <span class="text-slate-400">– termogeneza +34–100 kcal/dzień, mobilizacja FFA</span></div></div>
+          <div class="flex items-start gap-2">${gradeTag('B')} <div><span class="font-semibold text-slate-800">L-Karnityna</span> <span class="text-slate-400">– transport FFA do mitochondriów, −1,13 kg śr. (meta-analiza 2025)</span></div></div>
+        </div>
+      </div>`;
+
+    const starterStack = stackCard(
+      'STACK STARTER', '🏁', '113',
+      '#16a34a', 'Grade A × 2',
+      miniProd(db.wpc82,   'A', 'Białko: 2,0–2,7 g/kg/dzień → chroni mięśnie') +
+      miniProd(db.creatine,'A', 'Kreatyna 3–5 g/dzień → zachowanie siły i RMR'),
+      '✅ Naukowo najskuteczniejszy fundament – idealne na start'
+    );
+
+    const thermoStack = stackCard(
+      'STACK TERMOGENNY', '🔥', '164',
+      '#d97706', 'Grade A + B',
+      miniProd(db.wpc82,       'A', 'Białko: fundament ochrony mięśni') +
+      miniProd(db.fatBurnerSFD,'B', 'Kofeina+EGCG+synefryna: termogeneza i mobilizacja FFA') +
+      miniProd(db.lCarnitine,  'B', 'LCLT 2g + kofeina = synergia β-oksydacji'),
+      '🔥 Synergistyczny stack: kofeina mobilizuje FFA → karnityna transportuje do mitochondriów'
+    );
+
+    const advancedStack = stackCard(
+      'STACK ADVANCED', '🏆', '309',
+      '#7c3aed', 'Pełny protokół',
+      miniProd(db.wpi,       'A', 'WPI: 85%+ białka, min. tłuszcz i laktoza') +
+      miniProd(db.burn4all,  'B', 'Burn4ALL: wieloskładnikowy termogenik premium') +
+      miniProd(db.claComplex,'B', 'CLA+L-Karnityna+EGCG: synergia 3 w 1') +
+      miniProd(db.bcaa,      'B', 'BCAA: ochrona aminokwasów w głębokim deficycie') +
+      miniProd(db.omega3,    'B', 'Omega-3: gospodarka hormonalna i anty-zapalność'),
+      '🏆 Protokół zawodniczy – maksymalna ochrona mięśni + spalanie'
+    );
+
+    const followUp = `
+      <div class="mt-2 pt-2 border-t border-slate-100">
+        <p class="text-[10px] text-slate-400 uppercase tracking-wide mb-1.5">Doprecyzuj swój profil, a dobiorę idealny stack:</p>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="sendMsg('Dopiero zaczynam redukcję')" class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold">👶 Dopiero zaczynam</button>
+          <button onclick="sendMsg('Trenuję regularnie od lat')" class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold">💪 Trenuję regularnie</button>
+          <button onclick="sendMsg('Trenuję głównie cardio')" class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold">🏃 Głównie cardio</button>
+          <button onclick="sendMsg('Trenuję na siłowni')" class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold">🏋️ Siłownia</button>
+          <button onclick="sendMsg('Chcę bez kofeiny')" class="pill text-[11px] px-2.5 py-1 rounded-lg font-semibold">⚡ Bez kofeiny</button>
+        </div>
+      </div>`;
+
+    appendBot(`
+      Doskonały cel! Skuteczna redukcja = <strong>deficyt kaloryczny + wysokie białko</strong> (1,6–2,7 g/kg) + celowana suplementacja.<br><br>
+      ${scienceBar}
+      ${starterStack}
+      ${thermoStack}
+      ${advancedStack}
+      ${followUp}
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // SUBFLOW: POCZĄTKUJĄCY
+  // ——————————————————————————————————————————
+  function weightLossBeginnerResponse() {
+    appendBot(`
+      Świetnie, że zaczynasz! Na początku <strong>nie komplikuj</strong> — 2 suplementy Grade A wystarczą, żeby zobaczyć realne efekty.<br><br>
+      <div class="rounded-xl border border-green-200 p-3 mb-3 text-xs" style="background:#f0fdf4">
+        <p class="font-bold text-green-800 mb-1">📋 Plan dla początkującego (budżet ~113 zł/mies.)</p>
+        <ul class="space-y-1 text-slate-600">
+          <li>🥩 <strong>Białko</strong> 1,6–2,0 g/kg masy ciała dziennie (najważniejsze!)</li>
+          <li>🎯 <strong>Deficyt</strong> 300–400 kcal/dzień (max 0,5 kg tygodniowo)</li>
+          <li>💊 <strong>Kreatyna</strong> 3 g/dzień — zachowa siłę i mięśnie mimo diety</li>
+          <li>🚫 Na start <em>pomiń</em> spalacze i karnitynę — dieta + białko to 90% sukcesu</li>
+        </ul>
+      </div>
+      <div class="space-y-2">
+        ${miniProd(db.wpc82,   'A', 'Fundament #1: 2,0 g/kg/dzień — chroni mięśnie, daje sytość')}
+        ${miniProd(db.creatine,'A', 'Fundament #2: 3–5 g/dzień — zachowanie siły podczas diety')}
+        ${miniProd(db.vitamins,'B', 'Witaminy D + B-kompleks — metabolizm i energia na deficycie')}
+      </div>
+      <p class="text-[11px] text-slate-400 mt-3">💡 Po 4–6 tygodniach, gdy dieta jest opanowana, dodaj L-Karnitynę lub spalacz.</p>
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // SUBFLOW: ZAAWANSOWANY
+  // ——————————————————————————————————————————
+  function weightLossAdvancedResponse() {
+    appendBot(`
+      Skoro trenujesz regularnie, idziemy na <strong>pełny protokół</strong> — maksymalna ochrona FFM + agresywne spalanie.<br><br>
+      <div class="rounded-xl border border-purple-200 p-3 mb-3 text-xs" style="background:#faf5ff">
+        <p class="font-bold text-purple-800 mb-1">📋 Protokół zaawansowany (ISSN 2025)</p>
+        <ul class="space-y-1 text-slate-600">
+          <li>🥩 Białko: <strong>2,4–2,7 g/kg</strong> (WPI zamiast WPC — mniej tłuszczu, więcej białka)</li>
+          <li>💪 Kreatyna: <strong>5 g/dzień</strong> — niezbędna do zachowania objętości treningu</li>
+          <li>🔥 Termogenik: <strong>30–60 min przed treningiem</strong> (kofeina + EGCG + synefryna)</li>
+          <li>🔴 L-Karnityna: <strong>2 g</strong> z kofeiną — synergia β-oksydacji</li>
+          <li>🐟 Omega-3: <strong>2–3 g EPA+DHA</strong> — anty-zapalność, gospodarka hormonalna</li>
+        </ul>
+      </div>
+      <div class="space-y-2">
+        ${miniProd(db.wpi,          'A', 'WPI 85%+ białka — na rygorystyczną redukcję, bez laktozy')}
+        ${miniProd(db.creatine,     'A', 'Kreatyna 5 g/dzień — zachowanie siły w deficycie')}
+        ${miniProd(db.burn4all,     'B', 'Burn4ALL: kofeina+EGCG+synefryna — termogeneza pre-workout')}
+        ${miniProd(db.lCarnitine,   'B', 'L-Karnityna LCLT 2g + kofeina = synergia FFA → mitochondria')}
+        ${miniProd(db.omega3,       'B', 'Omega-3: EPA+DHA — redukcja stanów zapalnych, hormony')}
+      </div>
+      <p class="text-[11px] text-slate-400 mt-3">⚠️ Co 2 tygodnie zrób przerwę od kofeiny (1 tydzień off) — zapobiega tolerancji.</p>
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // SUBFLOW: CARDIO
+  // ——————————————————————————————————————————
+  function weightLossCardioResponse() {
+    appendBot(`
+      Cardio + redukcja = <strong>L-Karnityna to Twój must-have</strong>! Kofeina mobilizuje FFA z tłuszczu, karnityna je transportuje wprost do spalania. Idealne połączenie.<br><br>
+      <div class="rounded-xl border border-orange-200 p-3 mb-3 text-xs" style="background:#fff7ed">
+        <p class="font-bold text-orange-800 mb-1">📋 Protokół cardio na redukcji</p>
+        <ul class="space-y-1 text-slate-600">
+          <li>⏰ <strong>30 min przed cardio:</strong> Kofeina 3–5 mg/kg + L-Karnityna 2 g</li>
+          <li>🔥 <strong>LISS cardio na czczo</strong>: Połączenie kofeina+karnityna maksymalizuje β-oksydację</li>
+          <li>🥩 <strong>Białko post-cardio:</strong> Shake WPC/WPI aby zapobiec katabolizmowi</li>
+          <li>💧 <strong>Elektrolity:</strong> Intensywne cardio = utrata sodu, potasu, magnezu</li>
+        </ul>
+      </div>
+      <div class="space-y-2">
+        ${miniProd(db.lCarnitine,   'B', '🔴 L-Karnityna LCLT 2g — transport FFA przed cardio (z kofeiną)')}
+        ${miniProd(db.fatBurnerSFD, 'B', '☕ Fat Burner: kofeina 200mg + EGCG — mobilizacja FFA, termogeneza')}
+        ${miniProd(db.wpc82,        'A', '🥩 WPC po treningu — anty-katabolizm, regeneracja')}
+        ${miniProd(db.waterOut,     'B', '💧 Water Out — eliminacja wody, widoczna definicja')}
+      </div>
+      <p class="text-[11px] text-slate-400 mt-3">💡 Nauka (meta-analiza 2025): L-karnityna + kofeina to najlepszy stack dla cardio na czczo — mobilizacja + transport FFA jednocześnie.</p>
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // SUBFLOW: SIŁOWNIA
+  // ——————————————————————————————————————————
+  function weightLossStrengthResponse() {
+    appendBot(`
+      Trening siłowy na redukcji = <strong>kreatyna jest OBOWIĄZKOWA</strong>! Zachowuje siłę, objętość treningu i wyższy RMR. To sprawia, że spalasz więcej tłuszczu przy tej samej diecie.<br><br>
+      <div class="rounded-xl border border-blue-200 p-3 mb-3 text-xs" style="background:#eff6ff">
+        <p class="font-bold text-blue-800 mb-1">📋 Protokół siłowy na redukcji (ISSN 2025)</p>
+        <ul class="space-y-1 text-slate-600">
+          <li>💪 <strong>Kreatyna 5 g/dzień</strong> (Grade A) — klucz do zachowania siły w deficycie</li>
+          <li>🥩 <strong>Białko 2,2–2,7 g/kg</strong> — synteza białek mięśniowych (MPS) w deficycie</li>
+          <li>🔥 <strong>Pre-workout z kofeiną</strong> — intensywność treningu = więcej kalorii = więcej spalania</li>
+          <li>🛡️ <strong>BCAA między seriami</strong> — ochrona aminokwasów podczas długich sesji</li>
+        </ul>
+      </div>
+      <div class="space-y-2">
+        ${miniProd(db.wpc82,    'A', '🥩 Białko: 2,2–2,7 g/kg — MPS i ochrona FFM na deficycie')}
+        ${miniProd(db.creatine, 'A', '💪 Kreatyna 5 g/dzień — zachowanie siły i objętości treningu')}
+        ${miniProd(db.burn4all, 'B', '🔥 Burn4ALL pre-workout — kofeina 3–5 mg/kg przed treningiem')}
+        ${miniProd(db.bcaa,     'B', '🛡️ BCAA: ochrona mięśni, redukcja DOMS podczas deficytu')}
+      </div>
+      <p class="text-[11px] text-slate-400 mt-3">💡 Zaskakujący fakt (ISSN 2025): Kreatyna na redukcji = lepsze efekty niż bez kreatyny. Wyższa intensywność treningu → wyższy EPOC → więcej spalania tłuszczu po treningu.</p>
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // SUBFLOW: BEZ KOFEINY
+  // ——————————————————————————————————————————
+  function weightLossNoCaffeineResponse() {
+    appendBot(`
+      Dobra wiadomość: możesz skutecznie chudnąć <strong>bez kofeiny</strong>! Skoncentrujemy się na Grade A (białko + kreatyna) i naturalnych opcjach termogennych.<br><br>
+      <div class="rounded-xl border border-teal-200 p-3 mb-3 text-xs" style="background:#f0fdfa">
+        <p class="font-bold text-teal-800 mb-1">📋 Stack redukcyjny BEZ stymulantów</p>
+        <ul class="space-y-1 text-slate-600">
+          <li>✅ <strong>Białko + Kreatyna</strong> (Grade A) — fundament bez kofeiny, absolutnie skuteczny</li>
+          <li>🌶️ <strong>Kapsaicyna</strong> (w kompleksach) — termogeneza +34 kcal/dzień bez CNS stimulation</li>
+          <li>🔴 <strong>CLA + L-Karnityna</strong> — Grade B, bez kofeiny, wsparcie składu ciała</li>
+          <li>💧 <strong>Water Out</strong> — naturalny kompleks roślinny, zero kofeiny</li>
+        </ul>
+      </div>
+      <div class="space-y-2">
+        ${miniProd(db.wpc82,     'A', '🥩 Białko — fundament #1 każdej redukcji, niezależnie od kofeiny')}
+        ${miniProd(db.creatine,  'A', '💪 Kreatyna — zachowanie siły bez żadnych stymulantów')}
+        ${miniProd(db.claComplex,'B', '🔴 CLA+L-Karnityna+Green Tea — kompleks bez kofeiny do redukcji')}
+        ${miniProd(db.waterOut,  'B', '💧 Redox Water Out — naturalny, BEZ kofeiny, eliminacja wody')}
+      </div>
+      <p class="text-[11px] text-slate-400 mt-3">💡 Naukowo: Bez kofeiny biała + kreatyna wciąż daje Grade A efekty. Kofeina to dodatek, nie fundament.</p>
+    `);
+  }
+
+  // ——————————————————————————————————————————
+  // SUBFLOW: DLACZEGO TEN PRODUKT (EVIDENCE)
+  // ——————————————————————————————————————————
+  function explainProductResponse(query) {
+    const q = query.toLowerCase();
+    let title, grade, text;
+
+    if (q.includes('burn4all') || q.includes('fat burner')) {
+      title = "Spalacze (Burn4ALL / Fat Burner)";
+      grade = "B";
+      text = "Spalacze wieloskładnikowe opierają się na synergii kofeiny (Grade A) i EGCG z zielonej herbaty. Badania wskazują, że takie połączenie zwiększa wydatek energetyczny o 34-100 kcal dziennie (termogeneza) i poprawia utlenianie tłuszczów. Dodatek L-karnityny wspomaga transport uwolnionych kwasów tłuszczowych do mitochondriów.";
+    } else if (q.includes('karnityn')) {
+      title = "L-Karnityna";
+      grade = "B";
+      text = "L-Karnityna działa jak transporter - przenosi długołańcuchowe kwasy tłuszczowe (FFA) do mitochondriów, gdzie są spalane w celu uzyskania energii. Według metaanaliz (2025), suplementacja L-Karnityną prowadzi do średnio 1,13 kg większej utraty wagi w porównaniu do placebo. Najlepiej działa przyjmowana z węglowodanami lub kofeiną przed treningiem cardio.";
+    } else if (q.includes('cla')) {
+      title = "CLA (Sprzężony kwas linolowy)";
+      grade = "B";
+      text = "CLA wpływa na redukcję tkanki tłuszczowej poprzez hamowanie enzymu lipazy lipoproteinowej (LPL) i stymulację lipolizy. Pomaga chronić masę mięśniową podczas deficytu. Często stosowany jako bezpieczny suplement bez stymulantów (nie pobudza układu nerwowego).";
+    } else if (q.includes('bcaa') || q.includes('aminokwas')) {
+      title = "Aminokwasy BCAA";
+      grade = "B";
+      text = "BCAA (szczególnie leucyna) są kluczowe dla ochrony masy mięśniowej podczas głębokiego deficytu kalorycznego i długich treningów. Redukują rozpad białek mięśniowych (antykatabolizm) i zmniejszają opóźnioną bolesność mięśniową (DOMS).";
+    } else if (q.includes('omega') || q.includes('omega3') || q.includes('omega-3')) {
+      title = "Omega-3 (EPA/DHA)";
+      grade = "B";
+      text = "Kwasy tłuszczowe Omega-3 nie spalają tłuszczu bezpośrednio, ale są absolutnie kluczowe na redukcji. Łagodzą stany zapalne, poprawiają wrażliwość insulinową i dbają o gospodarkę hormonalną (np. poziom leptyny), która mocno cierpi podczas długotrwałego deficytu kalorycznego.";
+    } else if (q.includes('water out') || q.includes('water') || q.includes('woda')) {
+      title = "Kompleksy Diuretyczne (Water Out)";
+      grade = "B";
+      text = "Suplementy typu Water Out wykorzystują ekstrakty roślinne (pokrzywa, mniszek lekarski, żurawina) o udowodnionym, delikatnym działaniu moczopędnym. Pomagają pozbyć się nadmiaru wody podskórnej i zredukować uczucie opuchnięcia, co wizualnie 'wyostrza' sylwetkę bez utraty tłuszczu.";
+    } else if (q.includes('izolat') || q.includes('wpi') || q.includes('wpc') || q.includes('białko') || q.includes('bialk')) {
+      title = "Białko Serwatkowe (WPC/WPI)";
+      grade = "A";
+      text = "Białko to fundament redukcji! Posiada najwyższy efekt termiczny pożywienia (TEF) - organizm spala 20-30% kalorii z białka na samo jego strawienie. Zapewnia najwyższą sytość ze wszystkich makroskładników i chroni tkankę mięśniową przed rozpadem w trakcie deficytu kalorycznego.";
+    } else if (q.includes('kreatyn')) {
+      title = "Kreatyna";
+      grade = "A";
+      text = "Choć kojarzy się z masą, kreatyna jest krytyczna na redukcji. Według ISSN (2025), suplementacja kreatyną podczas redukcji pozwala utrzymać siłę i objętość treningową. Dzięki temu palisz więcej kalorii na treningu i chronisz mięśnie przed spaleniem, utrzymując wyższe tempo metabolizmu (RMR).";
+    } else {
+      title = "Działanie Naukowe";
+      grade = "B";
+      text = "Produkty ze sklepu SFD są oparte na sprawdzonych substancjach aktywnych. Zawsze dobieramy suplementy w oparciu o ich profil bezpieczeństwa i udowodnioną skuteczność w badaniach klinicznych.";
+    }
+
+    appendBot(`
+      <div class="rounded-xl border border-blue-200 p-3 mb-2 text-xs bg-white shadow-sm">
+        <div class="flex items-center gap-2 mb-2 pb-2 border-b border-blue-50">
+          ${gradeTag(grade)}
+          <span class="font-bold text-blue-900 text-sm">${title}</span>
+        </div>
+        <p class="text-slate-700 leading-relaxed text-[11px]">${text}</p>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-2">💡 Jeśli chcesz wiedzieć więcej o dawkowaniu, daj znać!</p>
+    `);
+  }
+
+  function proteinResponse() {
+    appendBot(`
+      Białko to podstawa zarówno na <strong>masie</strong>, jak i na <strong>redukcji</strong>. 
+      W SFD mamy kilka świetnych opcji. Oto moje top 2 rekomendacje:<br><br>
+      <div class="space-y-3">
+        ${productCard(db.wpc82)}
+        ${productCard(db.wpcDelicious)}
+      </div>
+    `);
+  }
+
+  function vitaminResponse() {
+    appendBot(`
+      Witaminy to fundament zdrowia każdego aktywnego człowieka! 
+      Szczególnie polecam kompleks witaminowo-mineralny stworzony z myślą o sportowcach:<br><br>
+      ${productCard(db.vitamins)}
+      <p class="text-xs text-slate-400 mt-3">
+        💡 Przy aktywności fizycznej zapotrzebowanie na witaminy B, D3 i magnez jest znacznie wyższe niż u osób nieaktywnych.
+      </p>
+    `);
+  }
+
+  function shakerResponse() {
+    appendBot(`
+      Dobry shaker to must-have przy suplementach! Polecamy nasz flagowy produkt:<br><br>
+      ${productCard(db.shaker)}
+    `);
+  }
+
+  function trainingResponse() {
+    appendBot(`
+      Na budowanie masy mięśniowej kluczowe są <strong>białko + kreatyna</strong>. 
+      Oto moje top rekomendacje ze sklepu SFD:<br><br>
+      <div class="space-y-3">
+        ${productCard(db.wpc82)}
+        ${productCard(db.creatine)}
+      </div>
+      <p class="text-xs text-slate-400 mt-3">
+        💡 Pro tip: Kreatyna najlepiej działa przy regularnym stosowaniu – bez przerw przez co najmniej 4-8 tygodni.
+      </p>
+    `);
+  }
+
+  function orderInfoResponse() {
+    appendBot(`
+      W sprawie zamówień i dostaw mogę przekierować Cię bezpośrednio do obsługi SFD:
+      <div class="mt-3 space-y-2">
+        <a href="https://sklep.sfd.pl/zamowienia" target="_blank"
+          class="flex items-center gap-2.5 p-2.5 bg-blue-50 border border-blue-100 rounded-xl hover:bg-blue-100 transition-colors">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#0c2af8">
+            <i class="fa-solid fa-box text-white text-xs"></i>
+          </div>
+          <div>
+            <p class="font-bold text-slate-800 text-xs">Status zamówienia</p>
+            <p class="text-[10px] text-slate-400">Sprawdź swój status na koncie SFD</p>
+          </div>
+          <i class="fa-solid fa-arrow-right text-slate-300 ml-auto text-xs"></i>
+        </a>
+        <a href="https://sklep.sfd.pl/kontakt" target="_blank"
+          class="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-headset text-slate-600 text-xs"></i>
+          </div>
+          <div>
+            <p class="font-bold text-slate-800 text-xs">Obsługa klienta</p>
+            <p class="text-[10px] text-slate-400">Pon–Pt: 8:00–18:00 | kontakt@sfd.pl</p>
+          </div>
+          <i class="fa-solid fa-arrow-right text-slate-300 ml-auto text-xs"></i>
+        </a>
+        <a href="https://sklep.sfd.pl/dostawa-i-platnosci" target="_blank"
+          class="flex items-center gap-2.5 p-2.5 bg-green-50 border border-green-100 rounded-xl hover:bg-green-100 transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-truck-fast text-green-600 text-xs"></i>
+          </div>
+          <div>
+            <p class="font-bold text-slate-800 text-xs">Dostawa i płatności</p>
+            <p class="text-[10px] text-slate-400">InPost, DPD &bull; 0 zł od 199 zł zamówienia</p>
+          </div>
+          <i class="fa-solid fa-arrow-right text-slate-300 ml-auto text-xs"></i>
+        </a>
+      </div>
+    `);
+  }
+
+  function fallbackResponse(query) {
+    appendBot(`
+      Dziękuję za pytanie! Jako konsultant SFD specjalizuję się w doradztwie suplementacyjnym 
+      i pomocy w wyborze produktów ze sklepu <strong>sklep.sfd.pl</strong>.<br><br>
+      <strong>Mogę Ci pomóc m.in. z:</strong>
+      <ul class="list-none mt-2 space-y-1 text-xs text-slate-600">
+        <li>🎯 Doborem suplementów na <strong>odchudzanie lub masę</strong></li>
+        <li>🥛 Wyborem najlepszej <strong>odżywki białkowej WPC</strong></li>
+        <li>🍓 Produktami <strong>Frulove – dżemy bez cukru</strong></li>
+        <li>💊 <strong>Witaminami i minerałami</strong> dla aktywnych</li>
+        <li>📦 Informacjami o <strong>zamówieniu i dostawie</strong></li>
+      </ul>
+      <br>
+      Napisz więcej o swoim celu, a dobiorę idealny zestaw! 💪<br>
+      <a href="https://sklep.sfd.pl" target="_blank" class="inline-flex items-center gap-1 mt-2 text-xs font-bold" style="color:#0c2af8">
+        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Przejdź do sklep.sfd.pl
+      </a>
+    `);
+  }
+
+  function sosZeroResponse() {
+    appendBot(`
+      <strong>SFD SOS Zero</strong> to nasz hit — proteinowa woda smakowa z <strong>20g białka</strong> 
+      i praktycznie zerową kalorycznością! Idealna zamiast napojów słodzonych. 🚀<br><br>
+      ${productCard(db.sosZero)}
+      <p class="text-xs text-slate-400 mt-2">💡 Doskonała jako szybka przekąska białkowa w pracy, szkole lub w podróży.</p>
+    `);
+  }
+
+  // ==================== PRODUCT CARD ====================
+  // Fallback images per category if CDN fails
+  const FALLBACK = {
+    protein:    'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=180&h=180&fit=crop&q=80',
+    burner:     'https://images.unsplash.com/photo-1607613009820-a29f4bea4986?w=180&h=180&fit=crop&q=80',
+    vitamins:   'https://images.unsplash.com/photo-1584308666744-24d5e478d530?w=180&h=180&fit=crop&q=80',
+    jam:        'https://images.unsplash.com/photo-1506802913710-98b068212177?w=180&h=180&fit=crop&q=80',
+    shaker:     'https://images.unsplash.com/photo-1622359487926-444a1e9444be?w=180&h=180&fit=crop&q=80',
+    default:    'https://images.unsplash.com/photo-1607613009820-a29f4bea4986?w=180&h=180&fit=crop&q=80',
+  };
+
+  const IMG_FALLBACK = {
+    wpc82:        FALLBACK.protein,
+    wpcDelicious: FALLBACK.protein,
+    fatburner:    FALLBACK.burner,
+    thermoMax:    FALLBACK.burner,
+    carnitine:    FALLBACK.vitamins,
+    vitamins:     FALLBACK.vitamins,
+    frulove:      FALLBACK.jam,
+    shaker:       FALLBACK.shaker,
+    creatine:     FALLBACK.vitamins,
+    sosZero:      FALLBACK.protein,
+  };
+
+  function productCard(prod, showStockOut = false) {
+    const fallback = IMG_FALLBACK[prod.id] || FALLBACK.default;
+    const opts = prod.variants.map((v, i) => {
+      const outOfStock = showStockOut && prod.stockOut && prod.stockOut.some(s => v.label.startsWith(s));
+      return `<option value="${i}" ${outOfStock ? 'disabled' : ''}>${outOfStock ? '\u26a0\ufe0f ' : ''}${v.label}${outOfStock ? ' (brak)' : ''}</option>`;
+    }).join('');
+
+    return `
+      <div class="prod-card p-3 my-1">
+        <div class="flex gap-3">
+          <div class="shrink-0 relative">
+            <img src="${prod.img}" 
+              onerror="this.onerror=null;this.src='${fallback}';"
+              class="w-16 h-16 rounded-xl object-cover shadow-sm" alt="${prod.name}">
+            <div class="absolute -top-1.5 -right-1.5 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md" style="background:#0c2af8">
+              od ${prod.price.toFixed(2).replace('.',',')} zł
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[9px] font-bold uppercase tracking-wider mb-0.5" style="color:#0c2af8">${prod.brand}</div>
+            <h4 class="font-bold text-slate-800 text-xs leading-tight">${prod.name}</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5 leading-snug" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${prod.desc}</p>
+            <button onclick="sendMsg('Dlaczego polecasz: ${prod.name}?')" class="mt-1.5 text-[9px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1"><i class="fa-solid fa-microscope"></i> Jak to działa naukowo?</button>
+          </div>
+        </div>
+        <div class="mt-2.5 flex items-center gap-2">
+          <select id="${prod.selectId}"
+            class="flex-1 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 text-slate-700"
+            style="--tw-ring-color:#0c2af8">
+            ${opts}
+          </select>
+          <button onclick="addToCart('${prod.id}','${prod.selectId}')"
+            class="shrink-0 px-3 py-1.5 rounded-lg text-white text-[11px] font-bold flex items-center gap-1 transition-all hover:opacity-90"
+            style="background:linear-gradient(135deg,#0c2af8,#00228f)">
+            <i class="fa-solid fa-cart-plus text-[10px]"></i> Dodaj
+          </button>
+        </div>
+        <a href="${prod.url}" target="_blank" rel="nofollow"
+          class="mt-1.5 flex items-center gap-1 text-[10px] font-semibold transition-colors hover:opacity-80"
+          style="color:#0c2af8">
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+          Zobacz w sklepie SFD
+        </a>
+      </div>
+    `;
+  }
+
+  // ==================== CART ====================
+  function addToCart(productId, selectId) {
+    const prod = db[productId];
+    const sel  = document.getElementById(selectId);
+    if (!sel) return;
+    const idx     = parseInt(sel.value);
+    const variant = prod.variants[idx];
+
+    cart.push({
+      uid:     productId + '-' + Date.now(),
+      key:     productId,
+      name:    prod.name,
+      variant: variant.label.split(' – ')[0],
+      price:   variant.price,
+      img:     prod.img,
+      url:     prod.url,
+    });
+
+    updateCartUI();
+    badgePop();
+    showAlert('✅ Dodano do koszyka!', `${prod.name} (${variant.label.split(' – ')[0]}) trafił do Twojego koszyka.`, 'success');
+
+    // Cross-sell
+    if (prod.crossSell && db[prod.crossSell]) {
+      setTimeout(() => crossSell(prod, db[prod.crossSell]), 900);
+    }
+  }
+
+  function crossSell(addedProd, sugProd) {
+    const scripts = {
+      shaker: `🥤 Do białka jak znalazł! Masz już <strong>Shaker SFD Pro</strong>?`,
+      wpc82:  `💪 Do spalacza warto dodać <strong>białko WPC</strong> – chroni mięśnie podczas redukcji.`,
+      frulove:`🍓 Do L-Karnityny polecamy <strong>Frulove</strong> – fit słodkości bez cukru do diety!`,
+    };
+    const msg = scripts[sugProd.id] || `Doskonały wybór! Polecamy uzupełnić zamówienie o <strong>${sugProd.name}</strong>.`;
+
+    appendBot(`
+      <div class="bg-blue-50/60 border border-blue-100 rounded-xl p-3">
+        <p class="text-xs font-bold text-blue-700 mb-1.5">🔥 OFERTA DODATKOWA SFD</p>
+        ${msg}<br><br>
+        Teraz w cenie <strong>${sugProd.variants[0].price.toFixed(2).replace('.',',')} zł</strong>.
+        <div class="flex gap-2 mt-2.5">
+          <button onclick="quickAdd('${sugProd.id}')" 
+            class="px-3 py-1.5 text-white text-[11px] font-bold rounded-lg transition-all hover:opacity-90"
+            style="background:#0c2af8">Tak, dodaj! 🛒</button>
+          <button onclick="appendBot('Jasne, nie ma problemu! Kontynuujemy zakupy.')"
+            class="px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg hover:bg-slate-200 transition-all">Nie, dziękuję</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function quickAdd(productId) {
+    const prod    = db[productId];
+    const variant = prod.variants[0];
+    cart.push({
+      uid:     productId + '-' + Date.now(),
+      key:     productId,
+      name:    prod.name,
+      variant: variant.label.split(' – ')[0],
+      price:   variant.price,
+      img:     prod.img,
+      url:     prod.url,
+    });
+    updateCartUI();
+    badgePop();
+    appendBot(`✅ Dodano <strong>${prod.name}</strong> do koszyka! Co robimy dalej – szukamy czegoś jeszcze, czy przechodzimy do kasy? 😊`);
+  }
+
+  function removeFromCart(uid) {
+    cart = cart.filter(i => i.uid !== uid);
+    updateCartUI();
+  }
+
+  function updateCartUI() {
+    const listEl   = document.getElementById('cart-list');
+    const emptyEl  = document.getElementById('cart-empty');
+    const countEl  = document.getElementById('c-count');
+    const subEl    = document.getElementById('c-subtotal');
+    const totalEl  = document.getElementById('c-total');
+
+    listEl.querySelectorAll('.cart-row').forEach(el => el.remove());
+
+    if (cart.length === 0) {
+      emptyEl.classList.remove('hidden');
+      countEl.textContent = '0 szt.';
+      subEl.textContent = '0,00 zł';
+      totalEl.textContent = '0,00 zł';
+    } else {
+      emptyEl.classList.add('hidden');
+      countEl.textContent = cart.length + ' szt.';
+      let total = 0;
+      cart.forEach(item => {
+        total += item.price;
+        listEl.insertAdjacentHTML('beforeend', `
+          <div class="cart-row flex items-center gap-2.5 p-2 cursor-default">
+            <img src="${item.img}" class="w-10 h-10 rounded-xl object-cover shrink-0">
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-bold text-slate-800 truncate">${item.name}</p>
+              <p class="text-[10px] text-slate-400">${item.variant}</p>
+            </div>
+            <div class="text-right shrink-0">
+              <p class="text-xs font-bold" style="color:#0c2af8">${item.price.toFixed(2).replace('.',',')} zł</p>
+              <button onclick="removeFromCart('${item.uid}')" class="text-[10px] text-slate-300 hover:text-red-500 underline transition-colors">Usuń</button>
+            </div>
+          </div>
+        `);
+      });
+      const fmt = total.toFixed(2).replace('.',',') + ' zł';
+      subEl.textContent   = fmt;
+      totalEl.textContent = fmt;
+    }
+
+    // Update badges
+    const count = cart.length;
+    ['fab-badge','fab-badge-chat'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = count;
+      el.style.opacity = count > 0 ? '1' : '0';
+    });
+  }
+
+  function badgePop() {
+    const b = document.getElementById('fab-badge');
+    b.classList.remove('badge-pop');
+    void b.offsetWidth;
+    b.classList.add('badge-pop');
+    setTimeout(() => b.classList.remove('badge-pop'), 500);
+  }
+
+  function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+      showAlert('📋 Skopiowano!', `Kod ${code} jest już w schowku. Wyślij go znajomemu!`, 'success');
+    }).catch(() => {
+      showAlert('📋 Skopiowano!', `Kod ${code} skopiowany. Wyślij go znajomemu!`, 'success');
+    });
+  }
+
+  // ==================== CHECKOUT ====================
+  function checkout() {
+    if (cart.length === 0) {
+      showAlert('⚠️ Koszyk pusty', 'Nie masz jeszcze żadnych produktów. Porozmawiaj z agentem, aby dodać produkty!', 'warning');
+      return;
+    }
+    const total = cart.reduce((s,i) => s+i.price, 0).toFixed(2).replace('.',',');
+    showAlert(
+      '🎉 Zamówienie złożone!',
+      `Twoje zamówienie na kwotę ${total} zł zostało przekazane do realizacji. Dziękujemy za zakupy w SFD!`,
+      'info'
+    );
+    cart = [];
+    updateCartUI();
+    if (cartOpen) toggleCart();
+    appendBot(`🎉 Dziękuję za zakupy w <strong>SFD</strong>! Twoje zamówienie zostało złożone i trafi do Ciebie w ciągu 1-3 dni roboczych.<br><br>Czy mogę jeszcze w czymś pomóc?`);
+  }
+
+  // ==================== RESET ====================
+  function resetChat() {
+    document.getElementById('chat-box').innerHTML = '';
+    renderWelcome();
+  }
+
+  // ==================== ALERT ====================
+  function showAlert(title, msg, type) {
+    const el       = document.getElementById('sfd-alert');
+    const iconEl   = document.getElementById('alert-icon');
+    const titleEl  = document.getElementById('alert-title');
+    const msgEl    = document.getElementById('alert-msg');
+
+    titleEl.textContent = title;
+    msgEl.textContent   = msg;
+
+    const configs = {
+      success: { bg:'#dcfce7', color:'#166534', icon:'fa-check' },
+      warning: { bg:'#fef3c7', color:'#92400e', icon:'fa-triangle-exclamation' },
+      info:    { bg:'#dbeafe', color:'#1e40af', icon:'fa-circle-info' },
+    };
+    const cfg = configs[type] || configs.info;
+    iconEl.style.background = cfg.bg;
+    iconEl.style.color      = cfg.color;
+    iconEl.innerHTML        = `<i class="fa-solid ${cfg.icon}"></i>`;
+
+    el.classList.remove('hidden');
+  }
+
+  function closeAlert() {
+    document.getElementById('sfd-alert').classList.add('hidden');
+  }
+  </script>
+
+</body>
+</html>
