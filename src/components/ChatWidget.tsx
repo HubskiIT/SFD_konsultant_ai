@@ -24,7 +24,8 @@ const STATIC_RESPONSES: Record<string, { text: string; productIds?: string[]; fo
     productIds: ['redoxHardcore', 'lCarnitine', 'wpi'],
     followUps: [
       { emoji: '💊', label: 'Czy spalacze są bezpieczne?' },
-      { emoji: '🧮', label: 'Jak obliczyć deficyt?' },
+      { emoji: '⚖️', label: 'Spalacz vs L-Karnityna?' },
+      { emoji: '☕', label: 'Kawa a spalacz tłuszczu?' },
     ],
   },
   '🧬 Kolagen na stawy': {
@@ -43,8 +44,12 @@ const STATIC_RESPONSES: Record<string, { text: string; productIds?: string[]; fo
     text: 'Tak, jeśli stosujesz je zgodnie z zaleceniami producenta i nie masz przeciwwskazań zdrowotnych (jak nadciśnienie czy choroby serca). Produkty SFD opierają się na legalnych, przebadanych substancjach roślinnych i kofeinie.',
     followUps: [],
   },
-  '🧮 Jak obliczyć deficyt?': {
-    text: 'Najprościej pomnożyć masę ciała przez 22-24 kcal, aby uzyskać Podstawową Przemianę Materii (BMR), a następnie pomnożyć przez współczynnik aktywności (np. 1.5). Od tego wyniku odejmij 300-500 kcal na start.',
+  '⚖️ Spalacz vs L-Karnityna?': {
+    text: 'Działają na innej płaszczyźnie, dlatego świetnie się uzupełniają!\n\n**Spalacz (np. Redox)** przyspiesza termogenezę (podnosi temperaturę ciała) i mocno pobudza do działania.\n**L-Karnityna** nie pobudza (nie ma kofeiny), ale działa jak "transporter" – chwyta uwolnione kwasy tłuszczowe i przenosi je do mitochondriów, gdzie są zamieniane na energię (szczególnie podczas treningu cardio).',
+    followUps: [],
+  },
+  '☕ Kawa a spalacz tłuszczu?': {
+    text: 'Większość silnych spalaczy zawiera już dużą dawkę kofeiny. Łączenie ich z mocną kawą lub przedtreningówką w tym samym czasie może prowadzić do przestymulowania układu nerwowego. Zalecamy zachować kilkugodzinny odstęp między porcją spalacza a filiżanką kawy.',
     followUps: [],
   },
   '⏱️ Kiedy brać kolagen?': {
@@ -179,11 +184,6 @@ export default function ChatWidget() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    if (trimmed === '🔄 Wróć') {
-      setQuickSuggestions(INITIAL_SUGGESTIONS);
-      return;
-    }
-
     const staticResponse = STATIC_RESPONSES[trimmed];
     if (staticResponse) {
       // Mock user message
@@ -217,7 +217,7 @@ export default function ChatWidget() {
       
       // Update quick suggestions to follow-ups
       if (staticResponse.followUps.length > 0) {
-        setQuickSuggestions([...staticResponse.followUps, { emoji: '🔄', label: 'Wróć' }]);
+        setQuickSuggestions(staticResponse.followUps);
       } else {
         setQuickSuggestions(INITIAL_SUGGESTIONS);
       }
@@ -497,7 +497,7 @@ export default function ChatWidget() {
             </p>
             <div className="flex flex-wrap gap-1.5">
               {quickSuggestions.map((s) => {
-                const fullText = s.label === 'Wróć' ? `${s.emoji} ${s.label}` : `${s.emoji} ${s.label}`;
+                const fullText = `${s.emoji} ${s.label}`;
                 return (
                   <button
                     key={s.label}
