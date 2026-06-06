@@ -69,7 +69,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:ml-auto">
             <button
               onClick={handleAdd}
               disabled={isAdded}

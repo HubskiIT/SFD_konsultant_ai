@@ -16,36 +16,50 @@ const INITIAL_SUGGESTIONS = [
 
 const STATIC_RESPONSES: Record<string, { text: string; productIds?: string[]; followUps: { emoji: string; label: string }[] }> = {
   '🔥 Redukcja tkanki tłuszczowej': {
-    text: `Podstawą skutecznej redukcji jest wygenerowanie deficytu kalorycznego, stymulacja metabolizmu oraz ochrona masy mięśniowej. Przygotowałem dla Ciebie kompleksowy zestaw oparty na potwierdzonych substancjach:
+    text: `Przygotowałem sprawdzony zestaw wspierający deficyt kaloryczny:
 
-1. **Spalacz Redox Hardcore** – Oparty na badaniach Sinetrol® oraz kofeinie. Silnie wspiera termogenezę.
-2. **L-Carnitine Strong** – Bez stymulantów, idealna pod sesje cardio. Wspomaga transport wolnych kwasów tłuszczowych do mitochondriów.
-3. **Izolat WPI** – Najczystsze białko. Tłumi apetyt i chroni mięśnie na ujemnym bilansie, bez zbędnych węglowodanów.`,
+1. Spalacz Redox – Silna termogeneza i energia.
+2. L-Carnitine – Transport tłuszczu, idealna pod cardio.
+3. Izolat WPI – Ochrona mięśni i sytość bez węglowodanów.`,
     productIds: ['redoxHardcore', 'lCarnitine', 'wpi'],
     followUps: [
-      { emoji: '💊', label: 'Czy spalacze są bezpieczne?' },
-      { emoji: '⚖️', label: 'Spalacz vs L-Karnityna?' },
-      { emoji: '☕', label: 'Kawa a spalacz tłuszczu?' },
+      { emoji: '🏃', label: 'Jakie suple na start?' },
+      { emoji: '💻', label: 'Spalanie za biurkiem?' },
+      { emoji: '🔥', label: 'Spalacz łagodny czy mocny?' },
+      { emoji: '🍩', label: 'Apetyt na słodycze?' },
+      { emoji: '🥛', label: 'WPC czy WPI na redukcji?' },
     ],
   },
   '🧬 Kolagen na stawy': {
-    text: `Kolagen (typ I i III) to podstawa tkanki łącznej. Według najnowszych wytycznych najlepsze efekty daje połączenie go z witaminą C, a przy silnym dyskomfortie – dodanie siarki organicznej i kwasów Omega-3. Oto rekomendowany zestaw:
+    text: `Oto zestaw mocno wspierający regenerację aparatu ruchu oraz zdrową skórę i włosy:
 
-1. **Collagen Premium** – Duża dawka hydrolizowanego kolagenu z obowiązkowym dodatkiem witaminy C dla lepszej syntezy.
-2. **Glukozamina + Chondroityna + MSM** – Potężny złoty standard w regeneracji i łagodzeniu dyskomfortu chrząstki.
-3. **Omega 3 Strong** – Kwasy EPA/DHA słyną z silnych właściwości wspierających stany zapalne.`,
-    productIds: ['collagenPremium', 'glucosamineComplex', 'omega3'],
+1. Collarose Fish – Kolagen rybi z peptydami Verisol (lepiej przyswajalny).
+2. Glukozamina + MSM – Łagodzi stany zapalne i dyskomfort.
+3. Omega 3 Strong – Silne wsparcie przeciwzapalne.`,
+    productIds: ['collaroseFish', 'glucosamineComplex', 'omega3'],
     followUps: [
       { emoji: '⏱️', label: 'Kiedy brać kolagen?' },
       { emoji: '🧪', label: 'Co to jest MSM?' },
     ],
   },
-  '💊 Czy spalacze są bezpieczne?': {
-    text: 'Tak, jeśli stosujesz je zgodnie z zaleceniami producenta i nie masz przeciwwskazań zdrowotnych (jak nadciśnienie czy choroby serca). Produkty SFD opierają się na legalnych, przebadanych substancjach roślinnych i kofeinie.',
+  '🏃 Jakie suple na start?': {
+    text: 'Na sam początek nie potrzebujesz skomplikowanych spalaczy! Podstawa to dobre białko (np. Izolat WPI) do podbicia podaży w diecie i ochrony mięśni, oraz L-Karnityna, jeśli planujesz dużo spacerować lub robić lekkie cardio. Termogeniki zostawiamy na później.',
     followUps: [],
   },
-  '⚖️ Spalacz vs L-Karnityna?': {
-    text: 'Działają na innej płaszczyźnie, dlatego świetnie się uzupełniają!\n\n**Spalacz (np. Redox)** przyspiesza termogenezę (podnosi temperaturę ciała) i mocno pobudza do działania.\n**L-Karnityna** nie pobudza (nie ma kofeiny), ale działa jak "transporter" – chwyta uwolnione kwasy tłuszczowe i przenosi je do mitochondriów, gdzie są zamieniane na energię (szczególnie podczas treningu cardio).',
+  '💻 Spalanie za biurkiem?': {
+    text: 'Przy siedzącym trybie życia kluczowa jest kontrola apetytu, ponieważ NEAT (spontaniczna aktywność) jest niemal zerowa. Świetnie sprawdzi się delikatny termogenik bez ogromnej dawki kofeiny, a także pyszne odżywki białkowe, które zablokują chęć na podjadanie.',
+    followUps: [],
+  },
+  '🔥 Spalacz łagodny czy mocny?': {
+    text: 'Jeśli to Twoja pierwsza redukcja lub jesteś wrażliwy na mocną kawę – koniecznie zacznij od łagodnego spalacza (lipotropowego) lub L-Karnityny. Wersje "Hardcore" zostaw sobie na sam koniec odchudzania, gdy waga stanie w miejscu i będziesz potrzebował mocnego bodźca.',
+    followUps: [],
+  },
+  '🍩 Apetyt na słodycze?': {
+    text: 'To najczęstszy powód porażki na diecie! Ratunkiem są pyszne dżemy zero kalorii (np. z linii FRULOVE), odżywki białkowe o smakach słodyczy (skutecznie "zabijają" apetyt) oraz suplementacja Chromem, który stabilizuje poziom cukru we krwi i fizycznie gasi chęć na słodkie.',
+    followUps: [],
+  },
+  '🥛 WPC czy WPI na redukcji?': {
+    text: 'Zdecydowanie Izolat (WPI)! Jest pozbawiony niemal całego tłuszczu i węglowodanów (w tym laktozy). Szybciej się wchłania i dostarcza maksimum czystego białka – a w deficycie kalorycznym liczy się każda zaoszczędzona kaloria z tłuszczów.',
     followUps: [],
   },
   '☕ Kawa a spalacz tłuszczu?': {
@@ -117,8 +131,10 @@ function extractProductsFromParts(message: Message): Product[] {
   for (const part of message.parts) {
     if (part.type === 'tool-invocation' && part.toolInvocation) {
       const invocation = part.toolInvocation;
+      const validTools = ['recommend_products', 'search_products', 'get_joint_products', 'get_safe_products'];
+      
       if (
-        invocation.toolName === 'recommend_products' &&
+        validTools.includes(invocation.toolName) &&
         invocation.state === 'result'
       ) {
         const result = invocation.result;
@@ -130,7 +146,10 @@ function extractProductsFromParts(message: Message): Product[] {
               const product = Object.values(products).find(
                 (p) => p.id === productId
               );
-              if (product) found.push(product);
+              // Only add if not already in the list to avoid duplicates, and limit to max 3
+              if (product && !found.some(p => p.id === product.id) && found.length < 3) {
+                found.push(product);
+              }
             }
           }
         }
@@ -169,16 +188,74 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [quickSuggestions, setQuickSuggestions] = useState(INITIAL_SUGGESTIONS);
 
-  const {
-    messages,
-    sendMessage,
-    setMessages,
-    status,
-  } = useChat({
-    api: '/api/chat',
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isLoading = status === 'submitted' || status === 'streaming';
+  const sendMessage = async (newMsg: { role: 'user'; content: string }) => {
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: newMsg.content };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      // Create assistant message from JSON response
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.text || '',
+      };
+
+      // Handle tool invocations to display product cards correctly or add to cart
+      if (data.toolInvocations && data.toolInvocations.length > 0) {
+        botMsg.parts = [];
+        if (data.text) {
+          botMsg.parts.push({ type: 'text', text: data.text });
+        }
+        for (const ti of data.toolInvocations) {
+          // Intercept add_to_cart and physically add the item!
+          if (ti.toolName === 'add_to_cart') {
+            const product = Object.values(products).find(p => p.id === ti.args.productId);
+            if (product) {
+              const variant = product.variants.find(v => v.label.includes(ti.args.variantLabel) || ti.args.variantLabel.includes(v.label)) || product.variants[0];
+              addItem({
+                productId: product.id,
+                name: product.name,
+                variant: variant.label,
+                price: variant.price,
+                imageUrl: product.imageUrl,
+                shopUrl: product.shopUrl,
+              });
+              // Show toast notification
+              setToastMsg(`Sztuczna Inteligencja dodała ${product.name} do koszyka!`);
+              setToastVisible(true);
+              setTimeout(() => setToastVisible(false), 3500);
+            }
+          } else {
+            // Otherwise, render as a tool card
+            botMsg.parts.push({
+              type: 'tool-invocation',
+              toolInvocation: ti,
+            });
+          }
+        }
+      }
+
+      setMessages([...newMessages, botMsg]);
+    } catch (err) {
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const processInput = useCallback((text: string) => {
     const trimmed = text.trim();
@@ -328,7 +405,7 @@ export default function ChatWidget() {
           className={
             isExpanded
               ? 'fixed inset-4 sm:inset-10 z-[999] bg-white rounded-2xl shadow-2xl border border-slate-200 flex overflow-hidden animate-fade-in'
-              : `fixed bottom-[90px] right-4 w-[400px] max-h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
+              : `fixed bottom-[90px] right-4 w-[460px] max-h-[600px] h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
                   isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
                 }`
           }
@@ -441,8 +518,16 @@ export default function ChatWidget() {
               }
 
               // Assistant message
-              const textContent = getTextContent(msg);
+              let textContent = getTextContent(msg);
               const recommendedProducts = extractProductsFromParts(msg);
+
+              // Forcefully hide redundant markdown lists if we are rendering product cards
+              if (recommendedProducts.length > 0 && textContent) {
+                const listIndex = textContent.search(/\n\s*(?:1\.|\-|\*)\s+/);
+                if (listIndex !== -1) {
+                  textContent = textContent.substring(0, listIndex).trim();
+                }
+              }
 
               return (
                 <div

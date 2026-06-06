@@ -1,31 +1,5 @@
 import ChatWidget from '@/components/ChatWidget';
-
-const DEMO_PRODUCTS = [
-  {
-    emoji: '🔥',
-    name: 'Fat Burner Extreme',
-    desc: 'Spalacz tłuszczu',
-    price: '49,99 zł',
-  },
-  {
-    emoji: '💪',
-    name: 'WPC80 Protein Plus',
-    desc: 'Białko serwatkowe',
-    price: '79,99 zł',
-  },
-  {
-    emoji: '🍓',
-    name: 'Frulove in Jelly',
-    desc: 'Dżem zero kalorii',
-    price: '24,99 zł',
-  },
-  {
-    emoji: '🧪',
-    name: 'L-Carnitine Sinefryna',
-    desc: 'Bezpieczny spalacz',
-    price: '39,99 zł',
-  },
-];
+import { products } from '@/data/products';
 
 export default function Home() {
   return (
@@ -174,21 +148,24 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {DEMO_PRODUCTS.map((product) => (
+            {Object.values(products).map((product) => (
               <div
-                key={product.name}
-                className="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-sfd-blue/30 transition-all duration-300 cursor-default"
+                key={product.id}
+                className="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-sfd-blue/30 transition-all duration-300 flex flex-col h-full"
               >
-                <div className="text-4xl mb-3">{product.emoji}</div>
-                <h3 className="font-bold text-slate-800 text-sm mb-0.5">
+                <div className="w-full aspect-square mb-3 relative rounded-lg overflow-hidden flex items-center justify-center p-2">
+                  <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
+                </div>
+                <p className="text-[10px] font-semibold text-sfd-blue uppercase tracking-wider mb-0.5">{product.brand}</p>
+                <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2">
                   {product.name}
                 </h3>
-                <p className="text-xs text-slate-500 mb-3">{product.desc}</p>
-                <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500 mb-3 flex-1 line-clamp-2">{product.description}</p>
+                <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100">
                   <span className="text-sm font-bold text-sfd-blue">
-                    {product.price}
+                    {product.variants[0].price.toFixed(2).replace('.', ',')} zł
                   </span>
-                  <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 group-hover:bg-sfd-light group-hover:text-sfd-blue group-hover:border-sfd-blue/20 transition-all">
+                  <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 group-hover:bg-sfd-light group-hover:text-sfd-blue group-hover:border-sfd-blue/20 transition-all cursor-default">
                     <i className="fa-solid fa-robot mr-1" />
                     Zapytaj AI
                   </span>

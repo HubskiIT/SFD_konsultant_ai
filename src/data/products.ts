@@ -45,6 +45,31 @@ export interface Product {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const products: Product[] = [
+  // ── COLLAROSE FISH ────────────────────────────────────────────────────────
+  {
+    id: 'collaroseFish',
+    name: 'COLLAROSE FISH',
+    brand: 'ALLDEYNN',
+    description:
+      'Najwyższej jakości kolagen rybi z opatentowanymi peptydami VERISOL®, wzbogacony o witaminę C, biotynę i kwas hialuronowy. Poprawia elastyczność skóry, wzmacnia włosy i paznokcie.',
+    price: 139.99,
+    unit: '300g',
+    imageUrl:
+      'https://sklep.sfd.pl/produkt_img/b9eb2b0f27e1ec4bf26464ae10708302COLLAROSE_FISH_i41242_d250x250.jpg',
+    shopUrl: 'https://sklep.sfd.pl/ALLDEYNN_COLLAROSE_FISH-opis41242.html',
+    variants: [
+      { label: 'Malina - Poziomka', price: 139.99 },
+      { label: 'Mango - Marakuja', price: 139.99 },
+      { label: 'Pomarańcza', price: 139.99 },
+      { label: 'Brzoskwinia-Mandarynka', price: 139.99 },
+      { label: 'Naturalny', price: 139.99 },
+    ],
+    crossSellId: 'omega3',
+    category: 'joint',
+    tags: ['kolagen', 'stawy', 'włosy', 'paznokcie', 'skóra'],
+    containsStimulants: false,
+    scienceGrade: 'B',
+  },
   // ── 1. WPC 82 ──────────────────────────────────────────────────────────────
   {
     id: 'wpc82',
@@ -204,26 +229,6 @@ export const products: Product[] = [
     scienceGrade: 'B',
   },
 
-  // ── 8. L-Karnityna 500 Forte Plus ──────────────────────────────────────────
-  {
-    id: 'carnitine',
-    name: 'L-Karnityna 500 Forte Plus',
-    brand: 'Olimp',
-    description:
-      'Farmaceutyczna jakość L-karnityny od Olimp. Wspomaga spalanie tłuszczu, funkcje serca i wydolność fizyczną.',
-    price: 87,
-    unit: '60 kapsułek',
-    imageUrl:
-      'https://sklep.sfd.pl/produkt_img/14c8f5ac8b62dd1d5d124448aef0edc0L-Karnityna_500_Forte_Plus_i817_d250x250.jpg',
-    shopUrl:
-      'https://sklep.sfd.pl/Olimp_L-Karnityna_500_Forte_Plus-opis817.html',
-    variants: [{ label: '60 kapsułek', price: 87 }],
-    crossSellId: 'frulove',
-    category: 'fat-burner',
-    tags: ['L-karnityna', 'spalanie', 'serce', 'bezpieczne'],
-    containsStimulants: false,
-    scienceGrade: 'B',
-  },
 
   // ── 9. CLA + L-Carnitine + Green Tea ───────────────────────────────────────
   {
@@ -267,25 +272,6 @@ export const products: Product[] = [
     scienceGrade: 'A',
   },
 
-  // ── 11. BCAA ───────────────────────────────────────────────────────────────
-  {
-    id: 'bcaa',
-    name: 'BCAA 500g',
-    brand: 'SFD NUTRITION',
-    description:
-      'Aminokwasy rozgałęzione BCAA w optymalnym stosunku 2:1:1. Wspomagają ochronę mięśni i regenerację po treningu.',
-    price: 50,
-    unit: '500g',
-    imageUrl:
-      'https://sklep.sfd.pl/produkt_img/43f2583aa63a9f808eec255d89c8639dBCAA_i32628_d250x250.jpg',
-    shopUrl: 'https://sklep.sfd.pl/SFD_NUTRITION_BCAA-opis32628.html',
-    variants: [{ label: '500g', price: 50 }],
-    crossSellId: 'wpc82',
-    category: 'amino',
-    tags: ['aminokwasy', 'BCAA', 'mięśnie', 'redukcja', 'regeneracja'],
-    containsStimulants: false,
-    scienceGrade: 'B',
-  },
 
   // ── 12. VitaMax Complex Plus ───────────────────────────────────────────────
   {
@@ -382,26 +368,6 @@ export const products: Product[] = [
     isAvailable: false, // Symulacja niedostępności
   },
 
-  // ── 16. Sos Zero Cinnamon Roll ─────────────────────────────────────────────
-  {
-    id: 'sosZero',
-    name: 'Sos Zero Cinnamon Roll 425ml',
-    brand: 'WK DZIK',
-    description:
-      'Sos zero kalorii o smaku cinnamon roll. Idealny dodatek do naleśników, gofrów i deserów na diecie.',
-    price: 20,
-    unit: '425ml',
-    imageUrl:
-      'https://sklep.sfd.pl/produkt_img/cc85f78f67c40a8e40c47528c504ee4fSos_Zero_Cinnamon_Roll_i43377_d250x250.jpg',
-    shopUrl:
-      'https://sklep.sfd.pl/WK_DZIK_Sos_Zero_Cinnamon_Roll-opis43377.html',
-    variants: [{ label: 'Cinnamon Roll', price: 20 }],
-    crossSellId: 'frulove',
-    category: 'food',
-    tags: ['sos', 'zero kalorii', 'dieta', 'fit'],
-    containsStimulants: false,
-    scienceGrade: 'C',
-  },
 
   // ── 17. Shaker ─────────────────────────────────────────────────────────────
   {
@@ -455,30 +421,6 @@ export const products: Product[] = [
     scienceGrade: 'B',
   },
 
-  // ── 19. Collagen Pro ──────────────────────────────────────────────────────
-  {
-    id: 'collagenPro',
-    name: 'Collagen Pro 180 kapsułek',
-    brand: 'ALLNUTRITION',
-    description:
-      'Kolagen hydrolizowany w kapsułkach z 17 aktywnymi składnikami. Wspiera stawy, kości, chrząstki, zęby i mięśnie. Zawiera kwas hialuronowy, glukozaminę, MSM, chondroitynę, witaminy C, D i K.',
-    price: 39,
-    unit: '180 kapsułek',
-    imageUrl:
-      'https://sklep.sfd.pl/produkt_img/73be308dd6a1e865df61568b01ddb6ccKD-Sci-MX_Diet_Pro_Protein_-_11.2017_i36737_d250x250.jpg',
-    shopUrl:
-      'https://sklep.sfd.pl/ALLNUTRITION_Collagen_Pro-opis36737.html',
-    variants: [{ label: '180 kaps', price: 39 }],
-    crossSellId: 'collagenPremium',
-    category: 'joint',
-    tags: [
-      'kolagen', 'stawy', 'kolana', 'chrząstka', 'kapsułki',
-      'kwas hialuronowy', 'glukozamina', 'MSM', 'chondroityna',
-      'witamina C', 'witamina D', 'witamina K', 'kości',
-    ],
-    containsStimulants: false,
-    scienceGrade: 'B',
-  },
 
   // ── 20. Glukozamina + Chondroityna + MSM ──────────────────────────────────
   {
