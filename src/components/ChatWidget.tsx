@@ -14,68 +14,7 @@ const INITIAL_SUGGESTIONS = [
   { emoji: '🧬', label: 'Kolagen na stawy' },
 ];
 
-const STATIC_RESPONSES: Record<string, { text: string; productIds?: string[]; followUps: { emoji: string; label: string }[] }> = {
-  '🔥 Redukcja tkanki tłuszczowej': {
-    text: `Przygotowałem sprawdzony zestaw wspierający deficyt kaloryczny:
-
-1. Spalacz Redox – Silna termogeneza i energia.
-2. L-Carnitine – Transport tłuszczu, idealna pod cardio.
-3. Izolat WPI – Ochrona mięśni i sytość bez węglowodanów.`,
-    productIds: ['redoxHardcore', 'lCarnitine', 'wpi'],
-    followUps: [
-      { emoji: '🏃', label: 'Jakie suple na start?' },
-      { emoji: '💻', label: 'Spalanie za biurkiem?' },
-      { emoji: '🔥', label: 'Spalacz łagodny czy mocny?' },
-      { emoji: '🍩', label: 'Apetyt na słodycze?' },
-      { emoji: '🥛', label: 'WPC czy WPI na redukcji?' },
-    ],
-  },
-  '🧬 Kolagen na stawy': {
-    text: `Oto zestaw mocno wspierający regenerację aparatu ruchu oraz zdrową skórę i włosy:
-
-1. Collarose Fish – Kolagen rybi z peptydami Verisol (lepiej przyswajalny).
-2. Glukozamina + MSM – Łagodzi stany zapalne i dyskomfort.
-3. Omega 3 Strong – Silne wsparcie przeciwzapalne.`,
-    productIds: ['collaroseFish', 'glucosamineComplex', 'omega3'],
-    followUps: [
-      { emoji: '⏱️', label: 'Kiedy brać kolagen?' },
-      { emoji: '🧪', label: 'Co to jest MSM?' },
-    ],
-  },
-  '🏃 Jakie suple na start?': {
-    text: 'Na sam początek nie potrzebujesz skomplikowanych spalaczy! Podstawa to dobre białko (np. Izolat WPI) do podbicia podaży w diecie i ochrony mięśni, oraz L-Karnityna, jeśli planujesz dużo spacerować lub robić lekkie cardio. Termogeniki zostawiamy na później.',
-    followUps: [],
-  },
-  '💻 Spalanie za biurkiem?': {
-    text: 'Przy siedzącym trybie życia kluczowa jest kontrola apetytu, ponieważ NEAT (spontaniczna aktywność) jest niemal zerowa. Świetnie sprawdzi się delikatny termogenik bez ogromnej dawki kofeiny, a także pyszne odżywki białkowe, które zablokują chęć na podjadanie.',
-    followUps: [],
-  },
-  '🔥 Spalacz łagodny czy mocny?': {
-    text: 'Jeśli to Twoja pierwsza redukcja lub jesteś wrażliwy na mocną kawę – koniecznie zacznij od łagodnego spalacza (lipotropowego) lub L-Karnityny. Wersje "Hardcore" zostaw sobie na sam koniec odchudzania, gdy waga stanie w miejscu i będziesz potrzebował mocnego bodźca.',
-    followUps: [],
-  },
-  '🍩 Apetyt na słodycze?': {
-    text: 'To najczęstszy powód porażki na diecie! Ratunkiem są pyszne dżemy zero kalorii (np. z linii FRULOVE), odżywki białkowe o smakach słodyczy (skutecznie "zabijają" apetyt) oraz suplementacja Chromem, który stabilizuje poziom cukru we krwi i fizycznie gasi chęć na słodkie.',
-    followUps: [],
-  },
-  '🥛 WPC czy WPI na redukcji?': {
-    text: 'Zdecydowanie Izolat (WPI)! Jest pozbawiony niemal całego tłuszczu i węglowodanów (w tym laktozy). Szybciej się wchłania i dostarcza maksimum czystego białka – a w deficycie kalorycznym liczy się każda zaoszczędzona kaloria z tłuszczów.',
-    followUps: [],
-  },
-  '☕ Kawa a spalacz tłuszczu?': {
-    text: 'Większość silnych spalaczy zawiera już dużą dawkę kofeiny. Łączenie ich z mocną kawą lub przedtreningówką w tym samym czasie może prowadzić do przestymulowania układu nerwowego. Zalecamy zachować kilkugodzinny odstęp między porcją spalacza a filiżanką kawy.',
-    followUps: [],
-  },
-  '⏱️ Kiedy brać kolagen?': {
-    text: 'Kolagen najlepiej przyjmować na czczo (około 30 minut przed posiłkiem), koniecznie w towarzystwie witaminy C dla maksymalnej przyswajalności.',
-    followUps: [],
-  },
-  '🧪 Co to jest MSM?': {
-    text: 'MSM (metylosulfonylometan) to organiczny związek siarki. Według badań pomaga redukować stany zapalne stawów i obrzęki, będąc doskonałym uzupełnieniem terapii kolagenem.',
-    followUps: [],
-  },
-};
-
+// Usunięto STATIC_RESPONSES, aby wszystko szło przez AI i wyświetlało produkty.
 /* ─── Toast notification ───────────────────────────────── */
 function Toast({
   message,
@@ -261,48 +200,9 @@ export default function ChatWidget() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const staticResponse = STATIC_RESPONSES[trimmed];
-    if (staticResponse) {
-      // Mock user message
-      const mockUserMsg: Message = { id: Date.now().toString(), role: 'user', content: trimmed };
-      
-      // Mock assistant message
-      const mockBotMsg: Message = { 
-        id: (Date.now() + 1).toString(), 
-        role: 'assistant', 
-        content: staticResponse.text 
-      };
-
-      // Add mocked tool result if productIds exist
-      if (staticResponse.productIds && staticResponse.productIds.length > 0) {
-        mockBotMsg.parts = [
-          { type: 'text', text: staticResponse.text },
-          { 
-            type: 'tool-invocation', 
-            toolInvocation: {
-              state: 'result', 
-              toolCallId: 'mock-' + Date.now(), 
-              toolName: 'recommend_products',
-              args: { productIds: staticResponse.productIds },
-              result: staticResponse.productIds.map(id => Object.values(products).find(p => p.id === id)).filter(Boolean)
-            }
-          }
-        ];
-      }
-
-      setMessages([...messages, mockUserMsg, mockBotMsg]);
-      
-      // Update quick suggestions to follow-ups
-      if (staticResponse.followUps.length > 0) {
-        setQuickSuggestions(staticResponse.followUps);
-      } else {
-        setQuickSuggestions(INITIAL_SUGGESTIONS);
-      }
-    } else {
-      // Normal API call
-      sendMessage({ role: 'user', content: trimmed });
-      setQuickSuggestions(INITIAL_SUGGESTIONS); // reset on custom input
-    }
+    // Normal API call
+    sendMessage({ role: 'user', content: trimmed });
+    setQuickSuggestions(INITIAL_SUGGESTIONS); // reset on custom input
   }, [messages, setMessages, sendMessage]);
 
   const handleSubmit = (e: React.FormEvent) => {
