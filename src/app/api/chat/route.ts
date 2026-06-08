@@ -64,6 +64,11 @@ function validateOutput(text: string): string {
   for (const pattern of FORBIDDEN_OUTPUT) {
     cleaned = cleaned.replace(pattern, '[---]');
   }
+  
+  // Zabezpieczenie przed halucynacja linkow i obrazkow z markdowna
+  cleaned = cleaned.replace(/!\[.*?\]\([^)]+\)/g, '');
+  cleaned = cleaned.replace(/\[.*?\]\([^)]+\)/g, '');
+  
   return cleaned;
 }
 
@@ -233,6 +238,7 @@ const SYSTEM_PROMPT = [
   'CENY I PROMOCJE: Zawsze podkreslaj, jesli Redox Hardcore jest w promocji.',
   'NIGDY nie wypisuj nazw, cen ani opisow produktow recznie w liscie punktowanej — ZAWSZE uzyj narzedzia recommend_products, aby wyswietlaly sie ich graficzne karty!',
   'ZAKAZ LINKOW MARKDOWN I OBRAZKOW: ZABRANIA SIE uzywania formatowania linkow (np. [Nazwa](https://...)) oraz wklejania obrazkow (np. ![Obraz](https://...)). Pod zadnym pozorem nie generuj surowych adresow URL. Wywolaj narzedzie recommend_products, a ono samo wyswietli wszystko za Ciebie!',
+  'BŁĄD KRYTYCZNY: Jeśli w Twojej odpowiedzi znajdzie się ciąg znaków "![", oznacza to, że złamałeś zasady i wygenerowałeś link obrazkowy Markdown. Masz obowiązek wywołać fizycznie funkcję recommend_products z tablicą ID (np. ["fatBurnerSFD"]), co spowoduje wyświetlenie w UI natywnych, interaktywnych kart.',
 ].join('\n');
 
 // ─────────────────────────────────────────────────────────────────────────────
