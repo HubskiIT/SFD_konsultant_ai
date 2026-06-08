@@ -483,24 +483,21 @@ export default function ChatWidget() {
             className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar bg-[#f8fafc] min-h-[200px] relative"
           >
             {/* Welcome message */}
-            {messages.length === 0 && (
-              <div className="flex gap-3 max-w-[85%] animate-fade-up">
-                <div className="w-8 h-8 rounded-full bg-sfd-gradient flex items-center justify-center text-white text-xs shrink-0 self-end mb-1">
-                  <i className="fa-solid fa-robot" />
-                </div>
-                <div className="bg-white rounded-2xl rounded-bl-none p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm">
-                  <p className="font-semibold text-sfd-blue text-xs uppercase tracking-wider mb-1">
-                    Konsultant SFD
-                  </p>
-                  Cześć! Jestem Twoim wirtualnym konsultantem SFD. Pomogę Ci
-                  dobrać odpowiednie suplementy, dietetyczne słodkości lub
-                  ułożyć szybki koszyk zakupowy.
-                  <br />
-                  <br />
-                  <strong>W czym mogę Ci dzisiaj pomóc?</strong>
-                </div>
+            {/* Welcome message (always visible) */}
+            <div className="flex gap-3 max-w-[85%] animate-fade-up">
+              <div className="w-8 h-8 rounded-full bg-sfd-gradient flex items-center justify-center text-white text-xs shrink-0 self-end mb-1">
+                <i className="fa-solid fa-robot" />
               </div>
-            )}
+              <div className="bg-white rounded-2xl rounded-bl-none p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm">
+                <p className="font-semibold text-sfd-blue text-xs uppercase tracking-wider mb-1">
+                  Konsultant SFD
+                </p>
+                Cześć! Jestem wirtualnym ekspertem ds. suplementacji sklepu SFD. Z przyjemnością doradzę Ci w wyborze najlepszych odżywek, wsparciu dla Twoich celów treningowych, a następnie przygotuję dla Ciebie gotowy koszyk zakupowy.
+                <br />
+                <br />
+                <strong>W czym mogę Ci dzisiaj pomóc?</strong>
+              </div>
+            </div>
 
             {/* Chat messages */}
             {messages.map((msg) => {
