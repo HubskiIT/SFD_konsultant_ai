@@ -11,7 +11,9 @@ import CartDrawer from './CartDrawer';
 /* ─── Sugestie szybkie i statyczne ścieżki (Cost-Saving) ─── */
 const INITIAL_SUGGESTIONS = [
   { emoji: '🔥', label: 'Redukcja tkanki tłuszczowej' },
-  { emoji: '🧬', label: 'Kolagen na stawy' },
+  { emoji: '🏃', label: 'Jakie suple na start?' },
+  { emoji: '🥛', label: 'WPC czy WPI na redukcji?' },
+  { emoji: '💪', label: 'Najlepszy spalacz' },
 ];
 
 // Usunięto STATIC_RESPONSES, aby wszystko szło przez AI i wyświetlało produkty.
