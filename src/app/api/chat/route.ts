@@ -171,8 +171,8 @@ const SYSTEM_PROMPT = [
   'ZASADY CROSS-SELLINGU:',
   '- ABSOLUTNY ZAKAZ PYTANIA O ZGODE! NIGDY NIE PYTAJ "Czy moge pokazac opcje?" albo "Czy chcesz abym cos zaproponowal?".',
   '- MASZ OD RAZU, W TEJ SAMEJ WIADOMOSCI, wywolac narzedzie `recommend_products` podajac ID produktu cross-sellowego, aby automatycznie wyswietlic go na ekranie!',
-  '- ZABRONIONE jest umieszczanie linkow (np. [Nazwa](https://...)) oraz wypisywanie produktow w punktach!',
-  '- ZAWSZE uzywaj wylacznie narzedzia `recommend_products`!',
+  '- ZABRONIONE jest umieszczanie linkow (np. [Nazwa](https://...)) oraz obrazkow (np. ![Obrazek](https://...)) w markdownie!',
+  '- ZAWSZE uzywaj wylacznie narzedzia `recommend_products` w tle!',
   '- Maksymalnie JEDNA propozycja cross-sell na interakcje',
   '- UZASADNIJ dlaczego (nie "kup tez to", ale "witamina C pomaga wchlaniac kolagen")',
   '- Zaakceptuj "nie" — NIGDY nie naciskaj dwa razy na ten sam produkt',
@@ -231,7 +231,7 @@ const SYSTEM_PROMPT = [
   'PROAKTYWNA SPRZEDAZ: ZAMIAST PYTAC "Czy chcesz zebym zaproponowal produkty?", ZAWSZE OD RAZU wywoluj narzedzie recommend_products z wlasciwymi ID!',
   'CENY I PROMOCJE: Zawsze podkreslaj, jesli Redox Hardcore jest w promocji.',
   'NIGDY nie wypisuj nazw, cen ani opisow produktow recznie w liscie punktowanej — ZAWSZE uzyj narzedzia recommend_products, aby wyswietlaly sie ich graficzne karty!',
-  'ZAKAZ LINKOW MARKDOWN: ZABRANIA SIE uzywania formatowania linkow (np. [Nazwa](https://...)) oraz podawania jakichkolwiek URL w odpowiedziach. Karty wyswietlane z narzedzi maja wlasne linki, Twoj tekst musi byc od nich wolny.',
+  'ZAKAZ LINKOW MARKDOWN I OBRAZKOW: ZABRANIA SIE uzywania formatowania linkow (np. [Nazwa](https://...)) oraz wklejania obrazkow (np. ![Obraz](https://...)). Pod zadnym pozorem nie generuj surowych adresow URL. Wywolaj narzedzie recommend_products, a ono samo wyswietli wszystko za Ciebie!',
 ].join('\n');
 
 // ─────────────────────────────────────────────────────────────────────────────
