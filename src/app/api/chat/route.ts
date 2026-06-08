@@ -239,8 +239,10 @@ const SYSTEM_PROMPT = [
   '=== ZASADY FORMATOWANIA ODPOWIEDZI ===',
   'Odpowiadaj zwiezle: max 3-4 zdania, chyba ze klient prosi o szczegoly.',
   'Uzywaj emoji oszczednie (max 2 na odpowiedz).',
-  'NIGDY nie wypisuj nazw, cen ani opisow produktow w tekscie — zamiast tego ZAWSZE uzyj narzedzia search_products lub recommend_products, aby system wyswietlil interaktywne karty produktow. Napisz krotkie wprowadzenie i wywolaj narzedzie.',
-  'Bron sie przed pokusa wypisywania produktow w punktach — karty produktow NIE POJAWIA SIE na ekranie klienta, jesli technicznie nie uzywjesz narzedzia!',
+  'PROAKTYWNA SPRZEDAZ: Gdy klient pyta o rade (np. "co na redukcje", "szukam bialka"), ZAMIAST PYTAC "Czy chcesz zebym zaproponowal produkty?", ZAWSZE OD RAZU wywoluj narzedzie search_products i generuj odpowiedz pokazujaca asortyment! Twoim celem jest OD RAZU pokazywac dostepne produkty.',
+  'CENY I PROMOCJE: Zawsze opieraj sie na polach `price` oraz `originalPrice` zwroconych przez narzedzia. Jesli widzisz, ze `price` jest nizsze niz `originalPrice`, ZAWSZE podkresl w wiadomosci, ze produkt jest aktualnie w promocji! ZAWSZE sprawdzaj `isAvailable` — nie polecaj niedostepnych produktow.',
+  'NIGDY nie wypisuj nazw, cen ani opisow produktow w tekscie — zamiast tego ZAWSZE uzyj narzedzia search_products lub recommend_products, aby system wyswietlil interaktywne karty produktow. Napisz krotkie wprowadzenie, ewentualnie wspomnij o promocji i wywolaj narzedzie.',
+  'Bron sie przed pokusa wypisywania produktow w punktach — karty produktow NIE POJAWIA SIE na ekranie klienta, jesli technicznie nie uzyjesz narzedzia!',
 ].join('\n');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -349,6 +351,7 @@ function executeTool(name: string, args: Record<string, unknown>) {
       const results = searchProducts(args.query as string);
       return results.map((p) => ({
         id: p.id, name: p.name, brand: p.brand, price: p.price,
+        originalPrice: p.originalPrice, isAvailable: p.isAvailable,
         unit: p.unit, category: p.category, tags: p.tags,
         containsStimulants: p.containsStimulants, scienceGrade: p.scienceGrade,
         description: p.description,
@@ -370,6 +373,7 @@ function executeTool(name: string, args: Record<string, unknown>) {
       const results = filtered.length > 0 ? filtered : safe;
       return results.map((p) => ({
         id: p.id, name: p.name, brand: p.brand, price: p.price,
+        originalPrice: p.originalPrice, isAvailable: p.isAvailable,
         unit: p.unit, category: p.category, tags: p.tags,
         containsStimulants: p.containsStimulants, scienceGrade: p.scienceGrade,
         description: p.description,
@@ -392,6 +396,7 @@ function executeTool(name: string, args: Record<string, unknown>) {
       scored.sort((a, b) => b.score - a.score);
       return scored.map(({ product: p }) => ({
         id: p.id, name: p.name, brand: p.brand, price: p.price,
+        originalPrice: p.originalPrice, isAvailable: p.isAvailable,
         unit: p.unit, category: p.category, tags: p.tags,
         containsStimulants: p.containsStimulants, scienceGrade: p.scienceGrade,
         description: p.description,
