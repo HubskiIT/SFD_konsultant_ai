@@ -69,11 +69,11 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             </div>
           )}
 
-          <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2 sm:ml-auto mt-2 sm:mt-0">
             <button
               onClick={handleAdd}
               disabled={isAdded}
-              className={`text-white text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`w-full sm:w-auto text-white text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 isAdded
                   ? 'bg-emerald-500 cursor-default'
                   : 'bg-sfd-gradient-btn hover:opacity-90'

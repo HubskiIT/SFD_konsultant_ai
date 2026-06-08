@@ -22,8 +22,8 @@ export default function CartDrawer({ isOpen, onClose, isEmbedded = false }: Cart
   if (!isOpen && !isEmbedded) return null;
 
   const containerClasses = isEmbedded
-    ? "flex flex-col w-[340px] shrink-0 bg-slate-50 border-l border-slate-200 h-full relative"
-    : "fixed bottom-20 right-4 w-[340px] max-h-[520px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col animate-slide-up overflow-hidden";
+    ? "flex flex-col w-[340px] shrink-0 bg-slate-50 h-full relative"
+    : "fixed bottom-[90px] sm:bottom-20 left-4 right-4 sm:left-auto sm:w-[340px] max-h-[520px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col animate-slide-up overflow-hidden";
 
   return (
     <>

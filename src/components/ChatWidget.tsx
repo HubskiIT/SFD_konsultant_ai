@@ -404,8 +404,8 @@ export default function ChatWidget() {
         <div
           className={
             isExpanded
-              ? 'fixed inset-4 sm:inset-10 z-[999] bg-white rounded-2xl shadow-2xl border border-slate-200 flex overflow-hidden animate-fade-in'
-              : `fixed bottom-[90px] right-4 w-[460px] max-h-[600px] h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
+              ? 'fixed inset-0 sm:inset-10 z-[999] bg-white sm:rounded-2xl shadow-2xl border-0 sm:border border-slate-200 flex overflow-hidden animate-fade-in'
+              : `fixed bottom-[90px] left-4 right-4 sm:left-auto sm:w-[460px] max-h-[600px] h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
                   isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
                 }`
           }
@@ -621,7 +621,9 @@ export default function ChatWidget() {
 
         {/* Cart Column (Embedded Mode) */}
         {isExpanded && (
-          <CartDrawer isOpen={true} onClose={() => {}} isEmbedded={true} />
+          <div className="hidden lg:block h-full border-l border-slate-200">
+            <CartDrawer isOpen={true} onClose={() => {}} isEmbedded={true} />
+          </div>
         )}
         </div>
       )}
