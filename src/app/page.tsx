@@ -1,4 +1,5 @@
 import ChatWidget from '@/components/ChatWidget';
+import PricingSection from '@/components/PricingSection';
 import { products } from '@/data/products';
 
 export default function Home() {
@@ -115,14 +116,14 @@ export default function Home() {
 
                 <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-100">
                   <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-                    <i className="fa-solid fa-paper-plane text-sm" />
+                    <i className="fa-solid fa-bolt text-sm" />
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase">
-                      Streaming
+                      Specjalizacja
                     </p>
                     <p className="text-xs font-bold text-slate-700">
-                      Vercel AI SDK
+                      Redukcja tłuszczu
                     </p>
                   </div>
                 </div>
@@ -148,7 +149,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.values(products).map((product) => (
+            {products.map((product) => (
               <div
                 key={product.id}
                 className="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-sfd-blue/30 transition-all duration-300 flex flex-col h-full"
@@ -165,15 +166,14 @@ export default function Home() {
                   <span className="text-sm font-bold text-sfd-blue">
                     {product.variants[0].price.toFixed(2).replace('.', ',')} zł
                   </span>
-                  <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 group-hover:bg-sfd-light group-hover:text-sfd-blue group-hover:border-sfd-blue/20 transition-all cursor-default">
-                    <i className="fa-solid fa-robot mr-1" />
-                    Zapytaj AI
-                  </span>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Sekcja pakietów / oferta wdrożenia */}
+        <PricingSection />
 
         {/* CTA Banner */}
         <div className="bg-sfd-gradient rounded-2xl p-8 text-white text-center relative overflow-hidden">
@@ -186,7 +186,7 @@ export default function Home() {
             </h2>
             <p className="text-blue-200 text-sm max-w-lg mx-auto">
               Rozpocznij rozmowę z inteligentnym konsultantem SFD. Zapytaj o
-              redukcję, suplementy, dżemy zero kalorii lub cokolwiek innego!
+              redukcję tkanki tłuszczowej, spalacze, białko lub L-karnitynę!
             </p>
           </div>
         </div>

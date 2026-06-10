@@ -11,6 +11,7 @@ interface CartDrawerProps {
 export default function CartDrawer({ isOpen, onClose, isEmbedded = false }: CartDrawerProps) {
   const items = useCartStore((s) => s.items);
   const removeItem = useCartStore((s) => s.removeItem);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
   const clearCart = useCartStore((s) => s.clearCart);
   const totalPrice = useCartStore((s) => s.totalPrice);
 
@@ -107,13 +108,35 @@ export default function CartDrawer({ isOpen, onClose, isEmbedded = false }: Cart
                     {item.name}
                   </h4>
                   <p className="text-[10px] text-slate-400">{item.variant}</p>
-                  <p className="text-xs font-bold text-sfd-blue mt-0.5">
-                    {formatPrice(item.price)}
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    {/* Kontrolka ilości */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => updateQuantity(item.uid, item.quantity - 1)}
+                        className="w-5 h-5 rounded-md bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors"
+                        title="Zmniejsz ilość"
+                      >
+                        <i className="fa-solid fa-minus text-[9px]" />
+                      </button>
+                      <span className="text-xs font-bold text-slate-700 w-5 text-center">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item.uid, item.quantity + 1)}
+                        className="w-5 h-5 rounded-md bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors"
+                        title="Zwiększ ilość"
+                      >
+                        <i className="fa-solid fa-plus text-[9px]" />
+                      </button>
+                    </div>
+                    <p className="text-xs font-bold text-sfd-blue">
+                      {formatPrice(item.price * item.quantity)}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => removeItem(item.uid)}
-                  className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all shrink-0"
+                  className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all shrink-0 self-start"
                   title="Usuń z koszyka"
                 >
                   <i className="fa-solid fa-xmark text-xs" />

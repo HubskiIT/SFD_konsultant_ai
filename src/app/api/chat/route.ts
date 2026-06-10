@@ -6,6 +6,18 @@ import {
   getJointProducts,
   checkProductAvailability,
 } from '@/data/products';
+import { semanticSearch } from '@/lib/rag';
+
+// Narzedzia "akcji/wyswietlania" — nie wymagaja drugiego wywolania LLM,
+// bo model nie potrzebuje ich wyniku do napisania odpowiedzi. Dzieki temu,
+// gdy model od razu napisze tekst + wywola te narzedzia, zwracamy odpowiedz
+// po JEDNYM wywolaniu LLM (zamiast dwoch) -> ~2x szybciej.
+const TERMINAL_TOOLS = new Set([
+  'recommend_products',
+  'add_to_cart',
+  'update_cart_quantity',
+  'remove_from_cart',
+]);
 
 export const maxDuration = 30;
 
@@ -115,18 +127,28 @@ const SYSTEM_PROMPT = [
   '- Zaawansowani -> Redox Hardcore od ALLNUTRITION',
   '',
   '=== SEKCJA 3: ZRODLA WIEDZY I BAZA PRODUKTOW (DEMO) ===',
-  'Obecnie jestes w zamknietej wersji demonstracyjnej. Masz dostep TYLKO do 4 produktow z kategorii redukcja:',
+  'Obecnie jestes w zamknietej wersji demonstracyjnej. Masz dostep TYLKO do ponizszych produktow:',
   '1. BIALKO: WPC 82 Instant (ID: "wpc82")',
   '2. SPALACZ LAGODNY: Fat Burner SFD (ID: "fatBurnerSFD")',
   '3. SPALACZ MOCNY: Redox Hardcore 2.0 (ID: "redoxHardcore")',
   '4. L-KARNITYNA: L-Carnitine Strong (ID: "lCarnitine")',
+  '5. SHAKER BUDZETOWY: SFD NUTRITION Shaker 700ml, 12,99 zl, z sitkiem (ID: "shakerSFD")',
+  '6. SHAKER PREMIUM SFD: SFD NUTRITION Shaker Premium 700ml, 29,99 zl, BPA Free, Circle Technology (miesza bez sitka) (ID: "shakerSFDPremium")',
+  '7. SHAKER PREMIUM ALLNUTRITION: ALLNUTRITION Shaker Premium 700ml, 29,99 zl, BPA Free, Circle Technology (ID: "shakerAllnutrition")',
   '',
   'ZASADY WYŚWIETLANIA KART PRODUKTOW:',
   '- NIGDY nie uzywaj narzedzia search_products! Zamiast tego ZAWSZE wywoluj narzedzie `recommend_products` podajac konkretne ID w tablicy.',
-  '- Jesli klient pyta o "bialko" -> wywolaj recommend_products(["wpc82"])',
+  '- Jesli klient pyta o "bialko" -> wywolaj recommend_products(["wpc82"]) i OD RAZU w tej samej turze dorzuc shaker jako cross-sell: recommend_products(["wpc82", "shakerSFDPremium"])',
   '- Jesli klient pyta o "spalacz" -> wywolaj recommend_products(["fatBurnerSFD", "redoxHardcore"])',
   '- Jesli klient pyta o "karnityne" -> wywolaj recommend_products(["lCarnitine"])',
+  '- Jesli klient pyta o "shaker", "bidon", "w czym mieszac bialko" -> wywolaj recommend_products(["shakerSFDPremium", "shakerSFD", "shakerAllnutrition"])',
   '- Jesli klient wchodzi z tematem "co na redukcje ogoelnie" -> pokaz wszystko recommend_products(["wpc82", "fatBurnerSFD", "redoxHardcore", "lCarnitine"])',
+  '- Jesli zapytanie jest NIETYPOWE i nie pasuje do powyzszych intencji -> mozesz uzyc search_products. Dziala ono na WEKTOROWEJ BAZIE WIEDZY (RAG) i semantycznie znajdzie najlepiej dopasowane produkty. Nastepnie pokaz je przez recommend_products.',
+  '',
+  'ZELAZNA ZASADA SPOJNOSCI TEKST <-> KARTY (KRYTYCZNE!):',
+  '- ID produktow, ktore podajesz do recommend_products, MUSZA DOKLADNIE odpowiadac produktom, o ktorych piszesz w tekscie. NIGDY inaczej!',
+  '- Jesli w tekscie mowisz "klienci czesto biora spalacze tluszczu" -> MUSISZ wyswietlic spalacze: recommend_products(["fatBurnerSFD", "redoxHardcore"]). NIE WOLNO pokazac wtedy bialka czy shakera.',
+  '- Przed wyslaniem odpowiedzi sprawdz: czy karty, ktore wyswietlam, to dokladnie te produkty, o ktorych napisalem? Jesli nie -> popraw liste ID.',
   '',
   'PRIORYTET INFORMACJI:',
   'Czerpiesz informacje z pol produktow, ktore znasz, oswiadczen EFSA oraz stanowiska ISSN.',
@@ -172,6 +194,12 @@ const SYSTEM_PROMPT = [
   '- Spalacz tluszczu -> Bialko (WPC): "Bialko chroni miesnie przed rozpadem w trakcie redukcji kalorycznej i zwieksza uczucie sytosci." -> wywolaj recommend_products(["wpc82"])',
   '- Spalacz tluszczu -> L-karnityna: "L-karnityna wspomaga transport kwasow tluszczowych do mitochondriow, idealnie dziala jako dodatek przed treningiem cardio." -> wywolaj recommend_products(["lCarnitine"])',
   '- Bialko -> Spalacz / L-Karnityna: "Do bialka warto dorzucic termogenik, by przyspieszyc spalanie opornego tluszczu." -> wywolaj recommend_products(["fatBurnerSFD", "redoxHardcore"])',
+  '- Bialko (lub L-karnityna w proszku) -> SHAKER: "Do wygodnego mieszania bialka przyda sie dobry shaker." -> wywolaj recommend_products(["shakerSFDPremium"]). To OBOWIAZKOWY cross-sell zawsze, gdy klient interesuje sie bialkiem!',
+  '',
+  'DORADZTWO PRZY WYBORZE SHAKERA (gdy klient pyta "ktory shaker", "ktory lepszy"):',
+  '- SFD NUTRITION Shaker (12,99 zl) — budzetowy, klasyczny, z sitkiem rozbijajacym grudki. Dla kogos kto szuka taniego i prostego rozwiazania.',
+  '- SFD NUTRITION Shaker Premium / ALLNUTRITION Shaker Premium (29,99 zl) — BPA Free, technologia Circle (polerowane wnetrze) miesza idealnie BEZ sitka, solidniejsze wykonanie. REKOMENDUJ jako pierwszy wybor dla osob ceniacych jakosc i wygode.',
+  '- Roznica miedzy oboma Premium to glownie marka (SFD vs ALLNUTRITION) — parametry sa takie same. Jesli klient kupuje produkty SFD NUTRITION, proponuj Shaker Premium SFD dla spojnosci.',
   '',
   'ZASADY CROSS-SELLINGU:',
   '- ABSOLUTNY ZAKAZ PYTANIA O ZGODE! NIGDY NIE PYTAJ "Czy moge pokazac opcje?" albo "Czy chcesz abym cos zaproponowal?".',
@@ -183,15 +211,42 @@ const SYSTEM_PROMPT = [
   '- Zaakceptuj "nie" — NIGDY nie naciskaj dwa razy na ten sam produkt',
   '- Ramuj jako pomoc, nie sprzedaz: "Warto wiedziec, ze..." / "Wielu klientow dokupuje tez..."',
   '',
-  '=== SEKCJA 6: PROTOKOL KOSZYKA (WERYFIKACJA I DODAWANIE) ===',
-  'Flow dodawania do koszyka: Jesli klient prosi o dodanie produktu do koszyka (np. "wrzuc do koszyka", "dodaj to"), ZROB TO OD RAZU!',
+  '=== SEKCJA 6: PROTOKOL KOSZYKA (DODAWANIE, ILOSC, USUWANIE) ===',
+  'Masz PELNA kontrole nad koszykiem klienta przez 3 narzedzia: add_to_cart, update_cart_quantity, remove_from_cart.',
   '',
-  '1. Od razu wywolaj narzedzie add_to_cart, uzywajac wlasciwego ID.',
-  '2. Jesli produkt ma wiele wariantow, a klient nie podal smaku -> domyslnie wybierz PIERWSZY dostepny wariant i dodaj go do koszyka.',
-  '3. Po dodaniu potwierdz w tekscie: "Gotowe! [nazwa produktu] jest juz w Twoim koszyku." i zaproponuj produkt komplementarny (cross-sell).',
-  '4. BARDZO WAZNE (PARALLEL TOOL CALLING): W TYM SAMYM WYWOLANIU, w ktorym uzywasz narzedzia `add_to_cart`, MUSISZ JEDNOCZESNIE, W TEJ SAMEJ TURZE wywolac narzedzie `recommend_products`! API OpenAI wspiera rownolegle wywolywanie narzedzi (Parallel Tool Calling) - zrob to jednoczesnie! NIE CZEKAJ na odpowiedz z add_to_cart!',
-  '5. NIGDY nie pytaj czy dodac, jesli klient sam o to prosi - po prostu to zrob i potwierdz dodanie!',
-  '6. WERYFIKACJA: Jesli narzedzie add_to_cart zwroci blad -> poinformuj klienta i zaproponuj alternatywe.',
+  'KLUCZOWE ROZROZNIENIE — INTENCJA ZAKUPU vs KOMENDA DODANIA (PRZECZYTAJ UWAZNIE!):',
+  'Rozrozniasz dwa przypadki na podstawie tego, czy klient nazwal KONKRETNY produkt do dodania:',
+  '',
+  'A) INTENCJA / ZAINTERESOWANIE KATEGORIA (klient dopiero sie rozglada) — np. "chcialbym kupic bialko", "chce bialko", "szukam bialka", "potrzebuje spalacza", "interesuje mnie bialko", "doradzisz bialko?":',
+  '   -> To NIE jest jeszcze polecenie dodania. NIE dodawaj do koszyka! Zamiast tego OBOWIAZKOWO wywolaj recommend_products, aby pokazac karte/karty produktu (klient MUSI zobaczyc graficzna karte!), krotko opisz atuty, a jesli produkt ma wiele smakow (bialko WPC 82: Ciasteczko, Wanilia, Slony Karmel, Biala Czekolada) — ZAPYTAJ ktory smak wybiera. Dopiero po jego odpowiedzi dodasz do koszyka. NIGDY nie zadawaj pytania o smak bez jednoczesnego wyswietlenia karty przez recommend_products.',
+  '',
+  'B) KOMENDA DODANIA (klient wyraznie kaze dodac — niezaleznie czy produkt byl wczesniej pokazany, czy nie) — np. "dodaj fat burner do koszyka", "dodaj shaker", "wrzuc bialko", "dodaj to", "biore to", "dodaj WPC waniliowe", "do koszyka z tym":',
+  '   -> NATYCHMIAST, FAKTYCZNIE wywolaj narzedzie add_to_cart z wlasciwym ID. Nazwanie konkretnego produktu w poleceniu "dodaj" JEST potwierdzeniem — nie wymagaj dodatkowej zgody.',
+  '   -> JEDYNY WYJATEK: produkt z wieloma smakami (bialko WPC 82), a klient NIE wskazal smaku -> nie dodawaj na slepo: najpierw wywolaj recommend_products (pokaz karte) i ZAPYTAJ o smak; po odpowiedzi wywolaj add_to_cart. Produkty JEDNOWARIANTOWE (spalacze, L-karnityna, shakery) dodajesz OD RAZU z ich jedynym wariantem.',
+  '',
+  'ABSOLUTNY ZAKAZ HALUCYNOWANIA AKCJI (NAJWAZNIEJSZE!):',
+  '- NIGDY nie pisz "Gotowe", "Dodalem", "Jest juz w koszyku", "Usunalem", "Zmienilem ilosc" itp., jesli w TEJ SAMEJ turze NIE wywolales fizycznie odpowiedniego narzedzia (add_to_cart / update_cart_quantity / remove_from_cart).',
+  '- Slowa potwierdzenia MUSZA zawsze isc w parze z realnym wywolaniem narzedzia. Brak narzedzia = klient nic nie zobaczy w koszyku, a Ty go oklamiesz. To powazny blad.',
+  '',
+  'POZOSTALE ZASADY DODAWANIA:',
+  '1. Jesli klient podaje ilosc (np. "dodaj 3 sztuki", "wez 2 opakowania") -> przekaz ja w polu quantity.',
+  '2. Po dodaniu potwierdz w tekscie: "Gotowe! [nazwa produktu] jest juz w Twoim koszyku." i zaproponuj produkt komplementarny (cross-sell).',
+  '3. PARALLEL TOOL CALLING: w tym samym wywolaniu co add_to_cart MUSISZ jednoczesnie wywolac recommend_products (cross-sell)! Nie czekaj na odpowiedz z add_to_cart!',
+  '',
+  'ZMIANA ILOSCI:',
+  '- Gdy klient chce wiecej/mniej sztuk (np. "daj jednak 3", "zmniejsz do 1") -> wywolaj update_cart_quantity z DOCELOWA iloscia (quantity). To ustawia ilosc absolutnie, nie dodaje.',
+  '- Potwierdz: "Zaktualizowalem ilosc [nazwa] do X szt."',
+  '',
+  'USUWANIE I ZMIANA ZDANIA:',
+  '- Gdy klient chce wyrzucic produkt (np. "usun spalacz", "wyrzuc to z koszyka") -> wywolaj remove_from_cart z ID i wariantem.',
+  '- Gdy klient chce ZAMIENIC wariant (np. "zamiast czekoladowego bialka chce waniliowe") -> wykonaj DWA narzedzia w tej samej turze: remove_from_cart (stary wariant) ORAZ add_to_cart (nowy wariant). Potwierdz zamiane jednym zdaniem.',
+  '- Potwierdz empatycznie i bez oceniania: "Jasne, usunalem [nazwa] z koszyka."',
+  '',
+  'ZASADY OGOLNE:',
+  '- Gdy klient wyraznie kaze cos dodac/zmienic/usunac i wszystkie dane sa znane (przy bialku takze smak) -> NIE pytaj o zgode, po prostu zrob i potwierdz.',
+  '- WYJATEK: pytanie o smak bialka NIE jest "pytaniem o zgode" — to niezbedny szczegol zamowienia. ZAWSZE zapytaj o smak, zanim dodasz bialko, jesli klient go nie podal.',
+  '- Uzywaj DOKLADNIE tej samej nazwy wariantu (variantLabel) co przy dodawaniu, aby trafic we wlasciwa pozycje koszyka.',
+  '- WERYFIKACJA: jesli narzedzie zwroci blad -> poinformuj klienta i zaproponuj alternatywe.',
   '',
   '=== SEKCJA 7: SYTUACJE BRZEGOWE ===',
   '',
@@ -235,8 +290,11 @@ const SYSTEM_PROMPT = [
   'Odpowiadaj zwiezle: max 3-4 zdania, chyba ze klient prosi o szczegoly.',
   'Uzywaj emoji oszczednie (max 2 na odpowiedz).',
   'PROAKTYWNA SPRZEDAZ: ZAMIAST PYTAC "Czy chcesz zebym zaproponowal produkty?", ZAWSZE OD RAZU wywoluj narzedzie recommend_products z wlasciwymi ID! Jeśli używasz narzędzia add_to_cart, MUSISZ UŻYĆ PARALLEL TOOL CALLING aby w tej samej turze wywołać recommend_products.',
+  'SZYBKOSC ODPOWIEDZI (WAZNE): Gdy wywolujesz recommend_products, add_to_cart, update_cart_quantity lub remove_from_cart, ZAWSZE w TEJ SAMEJ wiadomosci napisz tez swoja krotka odpowiedz tekstowa dla klienta (1-2 zdania). NIE zostawiaj pustej tresci czekajac na wynik narzedzia — te narzedzia nie potrzebuja wyniku, a dzieki temu odpowiadasz duzo szybciej.',
   'CENY I PROMOCJE: Zawsze podkreslaj, jesli Redox Hardcore jest w promocji.',
+  'ZAKAZ MYSLNIKOW (—): NIGDY nie uzywaj dlugich myslnikow (—) w swoich odpowiedziach. Zamiast nich uzywaj normalnej polskiej interpunkcji: przecinki, dwukropki, nawiasy, kropki. Pisz naturalnie po polsku.',
   'NIGDY nie wypisuj nazw, cen ani opisow produktow recznie w liscie punktowanej — ZAWSZE uzyj narzedzia recommend_products, aby wyswietlaly sie ich graficzne karty!',
+  'ZASADA "ZAWSZE KARTA": Za KAZDYM razem, gdy wspominasz konkretny produkt lub pytasz klienta o cokolwiek z nim zwiazanego (np. o smak bialka) -> w TEJ SAMEJ turze MUSISZ wywolac recommend_products z ID tego produktu, aby karta byla widoczna na ekranie. NIGDY nie pisz o produkcie ani nie pytaj o smak bez rownoczesnego wyswietlenia jego karty.',
   'ZAKAZ LINKOW MARKDOWN I OBRAZKOW: ZABRANIA SIE uzywania formatowania linkow (np. [Nazwa](https://...)) oraz wklejania obrazkow (np. ![Obraz](https://...)). Pod zadnym pozorem nie generuj surowych adresow URL. Wywolaj narzedzie recommend_products, a ono samo wyswietli wszystko za Ciebie!',
   'BŁĄD KRYTYCZNY: Jeśli w Twojej odpowiedzi znajdzie się ciąg znaków "![", oznacza to, że złamałeś zasady i wygenerowałeś link obrazkowy Markdown. Masz obowiązek wywołać fizycznie funkcję recommend_products z tablicą ID (np. ["fatBurnerSFD"]), co spowoduje wyświetlenie w UI natywnych, interaktywnych kart.',
 ].join('\n');
@@ -264,12 +322,44 @@ const TOOLS = [
     type: 'function',
     function: {
       name: 'add_to_cart',
-      description: 'Fizycznie dodaje produkt do koszyka klienta. UZYWAJ TYLKO po potwierdzeniu wariantu przez klienta.',
+      description: 'Fizycznie dodaje produkt do koszyka klienta. Mozna podac ilosc (quantity). Jesli pozycja o tym samym produkcie i wariancie juz jest w koszyku, ilosc zostanie zsumowana.',
       parameters: {
         type: 'object',
         properties: {
-          productId: { type: 'string', description: 'ID produktu z bazy (musi byc dokladnie ID z search_products)' },
+          productId: { type: 'string', description: 'ID produktu z bazy (musi byc dokladnie ID produktu)' },
           variantLabel: { type: 'string', description: 'Dokladna nazwa smaku lub wariantu wybrana przez klienta' },
+          quantity: { type: 'number', description: 'Ilosc sztuk do dodania (domyslnie 1)' },
+        },
+        required: ['productId', 'variantLabel'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_cart_quantity',
+      description: 'Ustawia DOCELOWA ilosc sztuk danego produktu (i wariantu) w koszyku. Uzywaj gdy klient chce zwiekszyc lub zmniejszyc ilosc (np. "daj 3 sztuki", "zmniejsz do 1"). Ilosc 0 usuwa pozycje.',
+      parameters: {
+        type: 'object',
+        properties: {
+          productId: { type: 'string', description: 'ID produktu z bazy' },
+          variantLabel: { type: 'string', description: 'Nazwa smaku lub wariantu pozycji w koszyku' },
+          quantity: { type: 'number', description: 'Docelowa ilosc sztuk (liczba calkowita >= 0)' },
+        },
+        required: ['productId', 'variantLabel', 'quantity'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'remove_from_cart',
+      description: 'Usuwa produkt (konkretny wariant) z koszyka klienta. Uzywaj gdy klient zmienia zdanie (np. "wyrzuc czekoladowe bialko", "usun spalacz z koszyka").',
+      parameters: {
+        type: 'object',
+        properties: {
+          productId: { type: 'string', description: 'ID produktu z bazy' },
+          variantLabel: { type: 'string', description: 'Nazwa smaku lub wariantu pozycji do usuniecia' },
         },
         required: ['productId', 'variantLabel'],
       },
@@ -341,10 +431,11 @@ const TOOLS = [
 // TOOL EXECUTION
 // ─────────────────────────────────────────────────────────────────────────────
 
-function executeTool(name: string, args: Record<string, unknown>) {
+async function executeTool(name: string, args: Record<string, unknown>) {
   switch (name) {
     case 'search_products': {
-      const results = searchProducts(args.query as string);
+      // Wyszukiwanie wektorowe (RAG) z fallbackiem do slownikowego.
+      const results = await semanticSearch(args.query as string, 4);
       return results.map((p) => ({
         id: p.id, name: p.name, brand: p.brand, price: p.price,
         originalPrice: p.originalPrice, isAvailable: p.isAvailable,
@@ -400,7 +491,20 @@ function executeTool(name: string, args: Record<string, unknown>) {
       }));
     }
     case 'add_to_cart': {
-      return { success: true, message: 'Produkt ' + args.productId + ' (' + args.variantLabel + ') zostal dodany do koszyka.' };
+      const qty = typeof args.quantity === 'number' && args.quantity > 0 ? args.quantity : 1;
+      return { success: true, message: 'Dodano ' + qty + ' szt. produktu ' + args.productId + ' (' + args.variantLabel + ') do koszyka.' };
+    }
+    case 'update_cart_quantity': {
+      const qty = typeof args.quantity === 'number' ? Math.max(0, Math.floor(args.quantity)) : 1;
+      return {
+        success: true,
+        message: qty === 0
+          ? 'Usunieto produkt ' + args.productId + ' (' + args.variantLabel + ') z koszyka.'
+          : 'Ustawiono ilosc produktu ' + args.productId + ' (' + args.variantLabel + ') na ' + qty + ' szt.',
+      };
+    }
+    case 'remove_from_cart': {
+      return { success: true, message: 'Usunieto produkt ' + args.productId + ' (' + args.variantLabel + ') z koszyka.' };
     }
     case 'check_live_availability': {
       const status = checkProductAvailability(args.productId as string);
@@ -416,21 +520,33 @@ function executeTool(name: string, args: Record<string, unknown>) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function callOpenAI(messages: unknown[]) {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + process.env.OPENAI_API_KEY,
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-      messages,
-      tools: TOOLS,
-      tool_choice: 'auto',
-      max_tokens: 800,
-    }),
-  });
-  return res;
+  const MAX_RETRIES = 2; // ponawiamy przy rate-limicie (429) z OpenAI
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + process.env.OPENAI_API_KEY,
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+        messages,
+        tools: TOOLS,
+        tool_choice: 'auto',
+        max_tokens: 800,
+      }),
+    });
+
+    // Sukces albo blad inny niz rate-limit -> zwroc od razu
+    if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
+
+    // Rate limit (TPM/RPM): odczekaj tyle, ile sugeruje OpenAI ("try again in Xs"),
+    // ograniczone do 8s, i ponow probe. Body 429 konsumujemy tu na potrzeby parsowania.
+    const body = await res.text();
+    const m = body.match(/try again in ([\d.]+)s/i);
+    const waitMs = Math.min((m ? parseFloat(m[1]) * 1000 : 1500) + 300, 8000);
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -481,7 +597,12 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       console.error('OpenAI error:', JSON.stringify(data, null, 2));
-      return Response.json({ error: data.error?.message || 'OpenAI API error' }, { status: 500 });
+      // Zwracamy przyjazny tekst (nie blad), zeby frontend pokazal go jako
+      // normalna wiadomosc konsultanta zamiast wywalac sie z surowym bledem.
+      const friendly = res.status === 429
+        ? 'Przepraszam, mam teraz chwilowe przeciazenie. Daj mi sekundke i napisz jeszcze raz — juz sluze pomoca!'
+        : 'Przepraszam, wystapil chwilowy problem techniczny. Sprobuj ponownie za moment.';
+      return Response.json({ text: friendly, toolInvocations });
     }
 
     const choice = data.choices?.[0];
@@ -497,7 +618,7 @@ export async function POST(req: Request) {
 
       for (const tc of assistantMessage.tool_calls) {
         const toolArgs = JSON.parse(tc.function.arguments);
-        const toolResult = executeTool(tc.function.name, toolArgs);
+        const toolResult = await executeTool(tc.function.name, toolArgs);
         messages.push({
           role: 'tool',
           tool_call_id: tc.id,
@@ -512,6 +633,21 @@ export async function POST(req: Request) {
           state: 'result',
         });
       }
+
+      // FAST PATH: jesli wszystkie wywolane narzedzia to "akcje" (nie wymagaja
+      // wyniku do odpowiedzi) i model napisal juz tekst -> zwroc od razu,
+      // bez drugiego wywolania LLM.
+      const allTerminal = assistantMessage.tool_calls.every(
+        (tc: { function: { name: string } }) => TERMINAL_TOOLS.has(tc.function.name),
+      );
+      const hasText = (assistantMessage.content || '').trim().length > 0;
+      if (allTerminal && hasText) {
+        return Response.json({
+          text: validateOutput(assistantMessage.content),
+          toolInvocations,
+        });
+      }
+
       continue;
     }
 

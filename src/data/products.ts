@@ -4,7 +4,9 @@
 
 export type ProductCategory =
   | 'protein'
-  | 'fat-burner';
+  | 'fat-burner'
+  | 'joint'
+  | 'shaker';
 
 export type ScienceGrade = 'A' | 'B' | 'C';
 
@@ -130,6 +132,69 @@ export const products: Product[] = [
     tags: ['L-karnityna', 'spalanie', 'transport FFA', 'cardio', 'redukcja'],
     containsStimulants: false,
     scienceGrade: 'B',
+  },
+
+  // ── 5. SFD NUTRITION Shaker (budżetowy) ────────────────────────────────────
+  {
+    id: 'shakerSFD',
+    name: 'SFD NUTRITION Shaker 700ml',
+    brand: 'SFD NUTRITION',
+    description:
+      'Klasyczny, szczelny shaker 700 ml z zakręcanym wieczkiem i sitkiem rozbijającym grudki. Duże logo SFD. Budżetowy wybór do codziennego mieszania białka i odżywek.',
+    price: 12.99,
+    unit: '700 ml',
+    imageUrl:
+      'https://sklep.sfd.pl/produkt_img/52020d128fc85d7d885ecd3469262adcShaker_i26176_d250x250.jpg',
+    shopUrl:
+      'https://sklep.sfd.pl/SFD_NUTRITION_Shaker-opis26176.html',
+    variants: [{ label: 'Czarny', price: 12.99 }],
+    crossSellId: 'wpc82',
+    category: 'shaker',
+    tags: ['shaker', 'bidon', 'akcesoria', 'białko', 'mieszanie', 'sitko'],
+    containsStimulants: false,
+    scienceGrade: 'A',
+  },
+
+  // ── 6. SFD NUTRITION Shaker Premium ────────────────────────────────────────
+  {
+    id: 'shakerSFDPremium',
+    name: 'SFD NUTRITION Shaker Premium 700ml',
+    brand: 'SFD NUTRITION',
+    description:
+      'Shaker premium 700 ml z atestowanego tworzywa BPA Free. Technologia Circle (polerowane wnętrze) idealnie miesza zawartość BEZ sitka. Solidny i wygodny do białka.',
+    price: 29.99,
+    unit: '700 ml',
+    imageUrl:
+      'https://sklep.sfd.pl/produkt_img/57293e01f01173255ba17c7dc37c269dShaker_Premium_i41212_d250x250.jpg',
+    shopUrl:
+      'https://sklep.sfd.pl/SFD_NUTRITION_Shaker_Premium-opis41212.html',
+    variants: [{ label: 'Czarny', price: 29.99 }],
+    crossSellId: 'wpc82',
+    category: 'shaker',
+    tags: ['shaker', 'bidon', 'akcesoria', 'białko', 'premium', 'BPA Free', 'bez sitka'],
+    containsStimulants: false,
+    scienceGrade: 'A',
+  },
+
+  // ── 7. ALLNUTRITION Shaker Premium ─────────────────────────────────────────
+  {
+    id: 'shakerAllnutrition',
+    name: 'ALLNUTRITION Shaker Premium 700ml',
+    brand: 'ALLNUTRITION',
+    description:
+      'Shaker premium 700 ml z atestowanego tworzywa BPA Free. Technologia Circle (polerowane wnętrze) gwarantuje idealne wymieszanie bez użycia sitka. Estetyczny, czarny design.',
+    price: 29.99,
+    unit: '700 ml',
+    imageUrl:
+      'https://sklep.sfd.pl/produkt_img/c1854843fce000f861ffbd669f944a0dShaker_Premium_i41211_d250x250.jpg',
+    shopUrl:
+      'https://sklep.sfd.pl/ALLNUTRITION_Shaker_Premium-opis41211.html',
+    variants: [{ label: 'Czarny', price: 29.99 }],
+    crossSellId: 'wpc82',
+    category: 'shaker',
+    tags: ['shaker', 'bidon', 'akcesoria', 'białko', 'premium', 'BPA Free', 'bez sitka'],
+    containsStimulants: false,
+    scienceGrade: 'A',
   },
 ];
 

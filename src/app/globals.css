@@ -103,6 +103,16 @@
   }
 }
 
+@keyframes teaserFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
 @keyframes toastIn {
   from {
     opacity: 0;
@@ -159,6 +169,10 @@
   animation: slideDown 0.25s ease-in both;
 }
 
+.animate-teaser-float {
+  animation: teaserFloat 2.8s ease-in-out infinite;
+}
+
 .animate-toast-in {
   animation: toastIn 0.3s ease-out both;
 }
@@ -190,6 +204,16 @@
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+}
+
+/* ─── Carousel kart produktow: ukryty scrollbar (nawigacja strzalkami) ─── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ─── Global Body ────────────────────────────────────────── */

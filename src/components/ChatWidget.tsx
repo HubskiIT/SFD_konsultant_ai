@@ -2,15 +2,18 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useChat, type UIMessage as Message } from '@ai-sdk/react';
+import { type UIMessage as Message } from '@ai-sdk/react';
 import { useCartStore } from '@/stores/cart-store';
 import { products, type Product } from '@/data/products';
 import ProductCard from './ProductCard';
+import ProductCarousel from './ProductCarousel';
 import CartDrawer from './CartDrawer';
 
 /* ─── Sugestie szybkie i statyczne ścieżki (Cost-Saving) ─── */
 const INITIAL_SUGGESTIONS = [
-  { emoji: '🔥', label: 'Redukcja tkanki tłuszczowej' },
+  { emoji: '🔥', label: 'Chcę schudnąć' },
+  { emoji: '💪', label: 'Jaki spalacz?' },
+  { emoji: '⚡', label: 'Zestaw redukcja' },
 ];
 
 // Usunięto STATIC_RESPONSES, aby wszystko szło przez AI i wyświetlało produkty.
@@ -36,7 +39,7 @@ function TypingIndicator() {
   return (
     <div className="flex gap-3 max-w-[85%]">
       <div className="w-8 h-8 rounded-full bg-sfd-gradient flex items-center justify-center text-white text-xs shrink-0 self-end mb-1">
-        <i className="fa-solid fa-robot" />
+        <i className="fa-solid fa-dumbbell" />
       </div>
       <div className="bg-white rounded-2xl rounded-bl-none p-3.5 shadow-xs border border-slate-100">
         <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -81,11 +84,9 @@ function extractProductsFromParts(message: Message): Product[] {
             const productId = item?.productId || item?.id;
             if (productId) {
               // Try to find in our product database
-              const product = Object.values(products).find(
-                (p) => p.id === productId
-              );
-              // Only add if not already in the list to avoid duplicates, and limit to max 3
-              if (product && !found.some(p => p.id === product.id) && found.length < 3) {
+              const product = products.find((p) => p.id === productId);
+              // Only add if not already in the list to avoid duplicates, and limit to max 6
+              if (product && !found.some(p => p.id === product.id) && found.length < 6) {
                 found.push(product);
               }
             }
@@ -116,11 +117,16 @@ export default function ChatWidget() {
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  // Dymek-zachęta obok zwiniętego FAB (zanim klient otworzy czat)
+  const [showTeaser, setShowTeaser] = useState(false);
+  const [teaserDismissed, setTeaserDismissed] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const addItem = useCartStore((s) => s.addItem);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
   const itemCount = useCartStore((s) => s.itemCount);
 
   const [input, setInput] = useState('');
@@ -143,7 +149,17 @@ export default function ChatWidget() {
       });
       const data = await res.json();
 
-      if (data.error) throw new Error(data.error);
+      // Backend zwraca przyjazny `text` nawet przy problemach. Gdyby jednak
+      // przyszedl czysty `error` (np. blad sieci), pokaz kulturalny komunikat
+      // jako wiadomosc konsultanta zamiast wywalac aplikacje.
+      if (data.error && !data.text) {
+        setMessages([...newMessages, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Przepraszam, wystapil chwilowy problem. Sprobuj ponownie za moment.',
+        }]);
+        return;
+      }
 
       // Create assistant message from JSON response
       const botMsg: Message = {
@@ -158,12 +174,56 @@ export default function ChatWidget() {
         if (data.text) {
           botMsg.parts.push({ type: 'text', text: data.text });
         }
+        // Pomocniczo: dopasuj wariant produktu po etykiecie (jak agent ją poda).
+        // Odporne na odmiany (np. "Waniliowy" -> "Wanilia") dzięki najdłuższemu wspólnemu prefiksowi.
+        const resolveVariant = (product: Product, variantLabel?: string) => {
+          if (!variantLabel || product.variants.length === 1) return product.variants[0];
+          const want = variantLabel.toLowerCase().trim();
+          const commonPrefix = (a: string, b: string) => {
+            let n = 0;
+            while (n < a.length && n < b.length && a[n] === b[n]) n++;
+            return n;
+          };
+          let best = product.variants[0];
+          let bestScore = -1;
+          for (const v of product.variants) {
+            const label = v.label.toLowerCase();
+            const score = label === want ? 999 : commonPrefix(label, want);
+            if (score > bestScore) {
+              bestScore = score;
+              best = v;
+            }
+          }
+          // Wymagaj sensownego dopasowania (>=3 znaki), inaczej pierwszy wariant
+          return bestScore >= 3 ? best : product.variants[0];
+        };
+
+        // Pomocniczo: znajdź uid pozycji w koszyku po produkcie i wariancie
+        const findCartUid = (productId: string, variantLabel: string) => {
+          const product = products.find((p) => p.id === productId);
+          if (!product) return undefined;
+          const variant = resolveVariant(product, variantLabel);
+          const match = useCartStore
+            .getState()
+            .items.find((i) => i.productId === productId && i.variant === variant.label);
+          return match?.uid;
+        };
+
+        const fireToast = (msg: string) => {
+          setToastMsg(msg);
+          setToastVisible(true);
+          setTimeout(() => setToastVisible(false), 3500);
+        };
+
         for (const ti of data.toolInvocations) {
           // Intercept add_to_cart and physically add the item!
           if (ti.toolName === 'add_to_cart') {
-            const product = Object.values(products).find(p => p.id === ti.args.productId);
+            const product = products.find(p => p.id === ti.args.productId);
             if (product) {
-              const variant = product.variants.find(v => v.label.includes(ti.args.variantLabel) || ti.args.variantLabel.includes(v.label)) || product.variants[0];
+              const variant = resolveVariant(product, ti.args.variantLabel);
+              const qty = typeof ti.args.quantity === 'number' && ti.args.quantity > 0
+                ? Math.floor(ti.args.quantity)
+                : 1;
               addItem({
                 productId: product.id,
                 name: product.name,
@@ -171,11 +231,43 @@ export default function ChatWidget() {
                 price: variant.price,
                 imageUrl: product.imageUrl,
                 shopUrl: product.shopUrl,
-              });
-              // Show toast notification
-              setToastMsg(`Sztuczna Inteligencja dodała ${product.name} do koszyka!`);
-              setToastVisible(true);
-              setTimeout(() => setToastVisible(false), 3500);
+              }, qty);
+              fireToast(
+                qty > 1
+                  ? `AI dodała ${qty}x ${product.name} do koszyka!`
+                  : `AI dodała ${product.name} do koszyka!`
+              );
+            }
+          } else if (ti.toolName === 'update_cart_quantity') {
+            const product = products.find(p => p.id === ti.args.productId);
+            const uid = findCartUid(ti.args.productId, ti.args.variantLabel);
+            const qty = typeof ti.args.quantity === 'number' ? Math.max(0, Math.floor(ti.args.quantity)) : 1;
+            if (uid) {
+              updateQuantity(uid, qty);
+              fireToast(
+                qty === 0
+                  ? `AI usunęła ${product?.name ?? 'produkt'} z koszyka.`
+                  : `AI ustawiła ilość ${product?.name ?? 'produktu'} na ${qty} szt.`
+              );
+            } else if (product && qty > 0) {
+              // Pozycji nie było w koszyku — potraktuj jak dodanie żądanej ilości
+              const variant = resolveVariant(product, ti.args.variantLabel);
+              addItem({
+                productId: product.id,
+                name: product.name,
+                variant: variant.label,
+                price: variant.price,
+                imageUrl: product.imageUrl,
+                shopUrl: product.shopUrl,
+              }, qty);
+              fireToast(`AI dodała ${qty}x ${product.name} do koszyka!`);
+            }
+          } else if (ti.toolName === 'remove_from_cart') {
+            const product = products.find(p => p.id === ti.args.productId);
+            const uid = findCartUid(ti.args.productId, ti.args.variantLabel);
+            if (uid) {
+              removeItem(uid);
+              fireToast(`AI usunęła ${product?.name ?? 'produkt'} z koszyka.`);
             }
           } else {
             // Otherwise, render as a tool card
@@ -190,6 +282,11 @@ export default function ChatWidget() {
       setMessages([...newMessages, botMsg]);
     } catch (err) {
       console.error('Chat error:', err);
+      setMessages([...newMessages, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Przepraszam, mam chwilowy problem z polaczeniem. Sprobuj ponownie za moment.',
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -215,6 +312,13 @@ export default function ChatWidget() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  /* Dymek-zachęta: pokaż po chwili, dopóki klient nie otworzy/nie zamknie go */
+  useEffect(() => {
+    if (teaserDismissed || isOpen) return;
+    const t = setTimeout(() => setShowTeaser(true), 1800);
+    return () => clearTimeout(t);
+  }, [teaserDismissed, isOpen]);
 
   /* Toast helper */
   const showToast = useCallback((msg: string) => {
@@ -269,6 +373,8 @@ export default function ChatWidget() {
       handleClose();
     } else {
       setIsOpen(true);
+      setShowTeaser(false);
+      setTeaserDismissed(true);
     }
   }, [isOpen, handleClose]);
 
@@ -276,6 +382,34 @@ export default function ChatWidget() {
 
   return (
     <>
+      {/* ─── Dymek-zachęta (gdy czat zwinięty) ──────────── */}
+      {!isOpen && showTeaser && (
+        <div className="fixed bottom-[30px] right-[94px] z-[1000] animate-slide-in-right">
+          <div
+            onClick={handleToggle}
+            className="animate-teaser-float relative bg-white rounded-2xl rounded-br-none shadow-xl border border-slate-100 pl-3.5 pr-8 py-2.5 cursor-pointer hover:shadow-2xl transition-shadow"
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTeaser(false);
+                setTeaserDismissed(true);
+              }}
+              className="absolute top-1.5 right-2 text-slate-300 hover:text-slate-500 text-xs leading-none"
+              aria-label="Zamknij dymek"
+            >
+              <i className="fa-solid fa-xmark" />
+            </button>
+            <p className="text-[13px] font-bold text-slate-800 leading-snug whitespace-nowrap">
+              Cześć! Jestem konsultantem SFD
+            </p>
+            <p className="text-[12px] text-slate-500 leading-snug mt-0.5 whitespace-nowrap">
+              W czym mogę Ci pomóc?
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ─── FAB Button ─────────────────────────────────── */}
       <button
         onClick={handleToggle}
@@ -287,7 +421,7 @@ export default function ChatWidget() {
         {isOpen ? (
           <i className="fa-solid fa-xmark text-xl" />
         ) : (
-          <i className="fa-solid fa-robot text-xl" />
+          <i className="fa-solid fa-dumbbell text-xl" />
         )}
 
         {/* Cart badge on FAB */}
@@ -304,7 +438,7 @@ export default function ChatWidget() {
           className={
             isExpanded
               ? 'fixed inset-0 sm:inset-10 z-[999] bg-white sm:rounded-2xl shadow-2xl border-0 sm:border border-slate-200 flex overflow-hidden animate-fade-in'
-              : `fixed bottom-[90px] left-4 right-4 sm:left-auto sm:w-[460px] max-h-[600px] h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
+              : `fixed bottom-[90px] left-4 right-4 sm:left-auto sm:w-[460px] max-h-[760px] h-[calc(100vh-80px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
                   isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
                 }`
           }
@@ -317,7 +451,7 @@ export default function ChatWidget() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white border border-white/20">
-                  <i className="fa-solid fa-robot text-lg" />
+                  <i className="fa-solid fa-dumbbell text-lg" />
                 </div>
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-sfd-navy" />
               </div>
@@ -385,13 +519,13 @@ export default function ChatWidget() {
             {/* Welcome message (always visible) */}
             <div className="flex gap-3 max-w-[85%] animate-fade-up">
               <div className="w-8 h-8 rounded-full bg-sfd-gradient flex items-center justify-center text-white text-xs shrink-0 self-end mb-1">
-                <i className="fa-solid fa-robot" />
+                <i className="fa-solid fa-dumbbell" />
               </div>
               <div className="bg-white rounded-2xl rounded-bl-none p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm">
                 <p className="font-semibold text-sfd-blue text-xs uppercase tracking-wider mb-1">
                   Konsultant SFD
                 </p>
-                Cześć! Jestem wirtualnym ekspertem ds. suplementacji sklepu SFD. Z przyjemnością doradzę Ci w wyborze najlepszych odżywek, wsparciu dla Twoich celów treningowych, a następnie przygotuję dla Ciebie gotowy koszyk zakupowy.
+                Cześć! 👋 Jestem Twoim osobistym <strong>Konsultantem SFD</strong>, ekspertem od suplementacji. Doradzę Ci pod Twój cel, wytłumaczę skład i od ręki przygotuję gotowy koszyk zakupowy.
                 <br />
                 <br />
                 <strong>W czym mogę Ci dzisiaj pomóc?</strong>
@@ -431,7 +565,7 @@ export default function ChatWidget() {
                   className="flex gap-3 max-w-[85%] animate-fade-up"
                 >
                   <div className="w-8 h-8 rounded-full bg-sfd-gradient flex items-center justify-center text-white text-xs shrink-0 self-end mb-1">
-                    <i className="fa-solid fa-robot" />
+                    <i className="fa-solid fa-dumbbell" />
                   </div>
                   <div className="bg-white rounded-2xl rounded-bl-none p-3.5 shadow-xs border border-slate-100 text-slate-800 text-sm w-full">
                     <p className="font-semibold text-sfd-blue text-xs uppercase tracking-wider mb-1">
@@ -444,18 +578,23 @@ export default function ChatWidget() {
                     )}
 
                     {/* Render product cards inline */}
-                    {recommendedProducts.length > 0 && (
-                      <div className="mt-3 space-y-3">
-                        {recommendedProducts.map((product) => (
-                          <ProductCard
-                            key={product.id}
-                            product={product}
-                            onAddToCart={(productId, variantIndex) =>
-                              handleAddToCart(product, variantIndex)
-                            }
-                          />
-                        ))}
+                    {recommendedProducts.length === 1 && (
+                      <div className="mt-3">
+                        <ProductCard
+                          product={recommendedProducts[0]}
+                          onAddToCart={(productId, variantIndex) =>
+                            handleAddToCart(recommendedProducts[0], variantIndex)
+                          }
+                        />
                       </div>
+                    )}
+
+                    {/* Wiele produktow -> carousel ze strzalkami (czytelniej w malym oknie) */}
+                    {recommendedProducts.length > 1 && (
+                      <ProductCarousel
+                        products={recommendedProducts}
+                        onAddToCart={handleAddToCart}
+                      />
                     )}
                   </div>
                 </div>
@@ -476,7 +615,7 @@ export default function ChatWidget() {
             <p className="text-[10px] text-slate-400 font-semibold mb-1.5 uppercase tracking-wide">
               Popularne pytania:
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-nowrap gap-1.5">
               {quickSuggestions.map((s) => {
                 const fullText = `${s.emoji} ${s.label}`;
                 return (
@@ -484,7 +623,7 @@ export default function ChatWidget() {
                     key={s.label}
                     onClick={() => handleSuggestion(fullText)}
                     disabled={isLoading}
-                    className="bg-slate-50 hover:bg-sfd-blue hover:text-white text-slate-700 text-[11px] px-2.5 py-1.5 rounded-lg transition-all font-medium border border-slate-200 disabled:opacity-50"
+                    className="flex-1 bg-slate-50 hover:bg-sfd-blue hover:text-white text-slate-700 text-[11px] px-2 py-1.5 rounded-lg transition-all font-medium border border-slate-200 disabled:opacity-50 whitespace-nowrap"
                   >
                     {fullText}
                   </button>
@@ -500,7 +639,7 @@ export default function ChatWidget() {
                 type="text"
                 value={input || ''}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Wpisz np. 'szukam dżemów', 'chcę schudnąć'..."
+                placeholder="Wpisz np. 'chcę schudnąć', 'jaki spalacz?'..."
                 className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sfd-blue focus:border-transparent transition-all placeholder:text-slate-400"
                 disabled={isLoading}
               />
