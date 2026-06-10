@@ -229,12 +229,22 @@ export default function PricingSection() {
                   Subskrypcja miesięczna
                 </p>
                 <ul className="space-y-2.5">
-                  {pkg.monthly.map((f, i) => (
-                    <li key={i} className="flex gap-2.5 text-sm text-slate-600">
-                      <i className={`fa-solid fa-check mt-0.5 shrink-0 ${c.check}`} />
-                      <span>{f}</span>
-                    </li>
-                  ))}
+                  {pkg.monthly.map((f, i) => {
+                    const isAddon = typeof f === 'object' && f.addon;
+                    const text = typeof f === 'object' ? f.text : f;
+                    return isAddon ? (
+                      <li key={i} className="flex gap-2.5 text-sm text-orange-700 bg-orange-50 border border-orange-100 rounded-lg px-2.5 py-1.5">
+                        <i className="fa-solid fa-circle-plus mt-0.5 shrink-0 text-orange-400" />
+                        <span className="flex-1">{text}</span>
+                        <span className="shrink-0 text-[10px] font-bold text-orange-400 uppercase tracking-wide self-start mt-0.5">Dodatek</span>
+                      </li>
+                    ) : (
+                      <li key={i} className="flex gap-2.5 text-sm text-slate-600">
+                        <i className={`fa-solid fa-check mt-0.5 shrink-0 ${c.check}`} />
+                        <span>{text}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
