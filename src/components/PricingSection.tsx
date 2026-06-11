@@ -5,74 +5,91 @@ const PACKAGES = [
     id: 'basic',
     name: 'Basic',
     subtitle: 'Doradca-Edukator',
-    tagline: 'Wirtualny ekspert, który odciąża BOK i edukuje klientów.',
+    tagline: 'Ekspert dostępny 24/7, który odpowiada zamiast Twojego BOK-u i prowadzi klienta do właściwego produktu.',
     accent: 'emerald',
     icon: 'fa-graduation-cap',
     inheritLabel: null,
+    gains: [
+      { icon: 'fa-clock', text: 'Zero czekania — klient dostaje odpowiedź natychmiast, o każdej porze' },
+      { icon: 'fa-shield-halved', text: 'Mniej porzuceń koszyka przez brak wiedzy o składach i dawkowaniu' },
+      { icon: 'fa-language', text: 'Obsługa klientów po polsku, angielsku i ukraińsku bez dodatkowego etatu' },
+    ],
     startup: [
-      'Baza wiedzy o produktach (architektura RAG)',
-      'Główny moduł językowy agenta',
-      'Odpowiedzi o składy, alergeny, dawkowanie i dobór pod cel',
-      'Kierowanie ruchu do właściwych kategorii sklepu',
-      'Wielojęzyczność: obsługa klientów w języku polskim, angielskim i ukraińskim',
+      'Agent odpowiada na pytania o składy, alergeny, dawkowanie i dobór produktu pod cel klienta',
+      'Baza wiedzy o całym katalogu SFD (architektura RAG — zawsze aktualna, semantyczna)',
+      'Kieruje ruch do właściwych kategorii i produktów w sklepie',
+      'Wielojęzyczność: polski, angielski, ukraiński — bez dodatkowej konfiguracji',
+      'Bezpieczne odpowiedzi: automatyczny disclaimer przy pytaniach zdrowotnych i lekowych',
     ] as FeatureItem[],
-    note: 'Bez integracji magazynu i koszyka: agent generuje linki do produktów.',
+    note: 'Pakiet bez integracji koszyka — agent generuje linki do produktów i kieruje do sklepu.',
     monthly: [
-      'Utrzymanie infrastruktury (monitoring backendu i bazy wektorowej)',
-      'Aktualizacja bazy wiedzy RAG raz w miesiącu',
+      'Monitoring backendu i bazy wiedzy (zero przestojów)',
+      'Aktualizacja katalogu RAG raz w miesiącu (nowe produkty, zmiany cen)',
+      'Raport miesięczny: najczęstsze pytania klientów i luki w bazie wiedzy',
       'SLA: reakcja na błędy krytyczne do 24h roboczych',
     ] as FeatureItem[],
-    example: '„Jakie białko przy nietolerancji laktozy?" → tłumaczy izolat vs koncentrat i wskazuje produkt.',
+    example: '„Jakie białko przy nietolerancji laktozy i czy mogę łączyć z kawą?" → agent tłumaczy izolat vs koncentrat, wskazuje konkretny produkt SFD i informuje o interakcjach z kofeiną.',
     highlighted: false,
   },
   {
     id: 'medium',
     name: 'Medium',
     subtitle: 'Doradca + Sprzedawca',
-    tagline: 'Doświadczony sprzedawca, zna magazyn na żywo i domyka sprzedaż.',
+    tagline: 'Sprzedawca, który zna stan magazynu na żywo, dobiera zestawy, stosuje cross-selling i nie pozwala klientowi wyjść z pustymi rękoma.',
     accent: 'blue',
     icon: 'fa-headset',
     inheritLabel: 'Wszystko z pakietu Basic, plus:',
+    gains: [
+      { icon: 'fa-arrow-trend-up', text: 'Wzrost średniej wartości koszyka dzięki spersonalizowanym zestawom i cross-sellingowi' },
+      { icon: 'fa-warehouse', text: 'Agent sprawdza dostępność w czasie rzeczywistym — żadnych zamówień na brak towaru' },
+      { icon: 'fa-flask', text: 'Kalkulator suplementacji: klient podaje wagę i cel, agent oblicza dawki i rekomenduje produkt' },
+    ],
     startup: [
-      'Integracja API magazynu: stany, smaki, ceny i rabaty w czasie rzeczywistym',
-      'Zoptymalizowane scenariusze sprzedażowe (cross-selling)',
-      'Monitoring rozmów i „procesu myślowego" agenta (LangSmith)',
-      'Kalkulator suplementacji: spersonalizowane dawkowanie na podstawie wagi, celu i planu treningowego',
+      'Integracja z API magazynu SFD: stany, smaki, ceny i rabaty w czasie rzeczywistym',
+      'Spersonalizowane strategie sprzedażowe: cross-selling i up-selling dopasowane do celu klienta',
+      'Kalkulator suplementacji: agent pyta o wagę, cel i intensywność treningów, dobiera dawkowanie i produkt',
+      'Automatyczne sugestie zestawów (np. spalacz + L-karnityna + białko na redukcji)',
+      'Monitoring rozmów i „toku myślowego" agenta w czasie rzeczywistym (LangSmith)',
     ] as FeatureItem[],
     note: null,
     monthly: [
-      'Cotygodniowy audyt rozmów i optymalizacja pod porzucone konwersacje',
-      'Dynamiczne zarządzanie asortymentem pod promocje i nowe smaki',
-      'Tarcza bezpieczeństwa: blokada prób hakowania agenta',
-      'SLA: reakcja do 24h roboczych',
+      'Cotygodniowy audyt porzuconych rozmów — optymalizacja scenariuszy sprzedażowych',
+      'Dynamiczne zarządzanie asortymentem: nowe smaki, akcje promocyjne, wyprzedaże',
+      'Tarcza bezpieczeństwa: blokada prób manipulacji i prompt injection',
+      'SLA: reakcja do 24h roboczych, raport miesięczny z wynikami konwersji',
     ] as FeatureItem[],
-    example: '„Macie kreatynę w smaku pomarańczowym?" → sprawdza magazyn i proponuje dostępny zamiennik.',
+    example: '„Chcę schudnąć 10 kg do wakacji, ważę 90 kg i trenuję 3x w tygodniu." → agent oblicza optymalną dawkę L-karnityny, dobiera spalacz bez stymulantów (wykrył nadciśnienie) i proponuje gotowy zestaw z ceną.',
     highlighted: false,
   },
   {
     id: 'premium',
     name: 'Premium',
     subtitle: 'Autonomiczny Asystent E-commerce',
-    tagline: 'Agent z „rękami", sam kompletuje koszyk i prowadzi do kasy.',
+    tagline: 'Agent z pełnymi uprawnieniami: sam kompletuje koszyk, zarządza ilościami, prowadzi klienta do kasy i pamięta każdą jego preferencję.',
     accent: 'purple',
     icon: 'fa-rocket',
     inheritLabel: 'Wszystko z pakietów Basic i Medium, plus:',
+    gains: [
+      { icon: 'fa-cart-arrow-down', text: 'Pełna automatyzacja koszyka — klient mówi „dodaj 2 białka waniliowe", agent to robi natychmiast' },
+      { icon: 'fa-microphone', text: 'Obsługa głosowa: klient nagrywa wiadomość zamiast pisać, agent transkrybuje i odpowiada' },
+      { icon: 'fa-chart-line', text: 'Dedykowany panel ROI dla Zarządu: ile sprzedał agent, które produkty, jakie zestawy' },
+    ],
     startup: [
-      'Pełna automatyzacja koszyka przez API (dodawanie, zmiana ilości, usuwanie)',
-      'Red Teaming i zabezpieczenia anty prompt-injection',
-      'Dedykowany panel analityczny dla Zarządu',
-      'Wiadomości głosowe: klient nagrywa zamiast pisać, Whisper transkrybuje i agent odpowiada',
+      'Pełna automatyzacja koszyka przez API: dodawanie, zmiana ilości, usuwanie produktów na komendę klienta',
+      'Wiadomości głosowe: klient nagrywa zamiast pisać, Whisper AI transkrybuje, agent odpowiada',
+      'Red Teaming i zaawansowane zabezpieczenia anty prompt-injection',
+      'Dedykowany panel analityczny dla Zarządu: sprzedaż, konwersja, najczęstsze zestawy',
       { text: 'Pamięć klienta między sesjami: agent zapamiętuje cel, preferencje i historię rozmów', addon: true },
       { text: 'Proaktywne alerty SMS/e-mail: powiadomienie gdy oglądany produkt wchodzi w promocję', addon: true },
     ] as FeatureItem[],
     note: null,
     monthly: [
-      'Nadzór nad integracją transakcyjną (punkt styku z koszykiem)',
-      '10h pracy inżyniera AI miesięcznie na rozwój funkcji',
-      'Comiesięczny biznesowy raport ROI dla Zarządu',
-      'SLA priorytetowe: reakcja do 12h (dyżury weekendowe)',
+      '10h pracy inżyniera AI miesięcznie na rozwój i optymalizację nowych scenariuszy',
+      'Nadzór nad integracją transakcyjną (koszyk, płatności, stany magazynowe)',
+      'Comiesięczny biznesowy raport ROI dla Zarządu z rekomendacjami',
+      'SLA priorytetowe: reakcja do 12h, dyżury weekendowe',
     ] as FeatureItem[],
-    example: '„Dorzuć 2x czekoladowe białko i tanią przedtreningówkę." → sam kompletuje koszyk i kieruje do kasy.',
+    example: '„Dorzuć 2x czekoladowe białko, tańszy spalacz i shaker, i zamów to na mój adres." → agent kompletuje koszyk, potwierdza każdą pozycję, proponuje tańszy zamiennik spalacza w promocji i przekierowuje do kasy z gotowym zamówieniem.',
     highlighted: true,
   },
 ];
@@ -82,6 +99,8 @@ const ACCENT = {
     bar: 'bg-emerald-500',
     icon: 'bg-emerald-50 text-emerald-600',
     check: 'text-emerald-500',
+    gainBg: 'bg-emerald-50/70 border-emerald-100',
+    gainIcon: 'text-emerald-500',
     subBg: 'bg-emerald-50/60 border-emerald-100',
     subIcon: 'text-emerald-600',
   },
@@ -89,6 +108,8 @@ const ACCENT = {
     bar: 'bg-sfd-blue',
     icon: 'bg-sfd-light text-sfd-blue',
     check: 'text-sfd-blue',
+    gainBg: 'bg-sfd-light/60 border-sfd-blue/15',
+    gainIcon: 'text-sfd-blue',
     subBg: 'bg-sfd-light/50 border-sfd-blue/15',
     subIcon: 'text-sfd-blue',
   },
@@ -96,6 +117,8 @@ const ACCENT = {
     bar: 'bg-purple-500',
     icon: 'bg-purple-50 text-purple-600',
     check: 'text-purple-500',
+    gainBg: 'bg-purple-50/70 border-purple-100',
+    gainIcon: 'text-purple-500',
     subBg: 'bg-purple-50/60 border-purple-100',
     subIcon: 'text-purple-600',
   },
@@ -164,6 +187,20 @@ export default function PricingSection() {
 
                   <p className="text-sm text-slate-600 mb-4 leading-relaxed">{pkg.tagline}</p>
 
+                  {/* Co zyskujesz */}
+                  <div className={`rounded-xl border p-3.5 mb-4 space-y-2 ${c.gainBg}`}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      <i className={`fa-solid fa-bullseye mr-1.5 ${c.gainIcon}`} />
+                      Co zyskuje SFD
+                    </p>
+                    {pkg.gains.map((g, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <i className={`fa-solid ${g.icon} text-xs mt-0.5 shrink-0 ${c.gainIcon}`} />
+                        <p className="text-xs text-slate-700 leading-snug">{g.text}</p>
+                      </div>
+                    ))}
+                  </div>
+
                   {/* Cena */}
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                     <i className={`fa-solid fa-comments text-lg ${c.check}`} />
@@ -173,7 +210,7 @@ export default function PricingSection() {
                     </div>
                   </div>
 
-                  {/* Nagłówek sekcji */}
+                  {/* Nagłówek funkcji */}
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
                     <i className={`fa-solid fa-flag-checkered ${c.subIcon}`} />
                     Co dostajesz na starcie (wdrożenie)
@@ -214,7 +251,7 @@ export default function PricingSection() {
                   <div className="border-t border-slate-100 pt-3 mt-auto">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                       <i className="fa-solid fa-comment-dots mr-1" />
-                      W praktyce
+                      Przykład rozmowy
                     </p>
                     <p className="text-xs text-slate-500 italic leading-relaxed">{pkg.example}</p>
                   </div>
@@ -239,7 +276,7 @@ export default function PricingSection() {
                       </li>
                     ) : (
                       <li key={i} className="flex gap-2.5 text-sm text-slate-600">
-                        <i className={`fa-solid fa-check mt-0.5 shrink-0 ${c.check}`} />
+                        <i className={`fa-solid fa-check mt-0.5 shrink-0 ${c.subIcon}`} />
                         <span>{text}</span>
                       </li>
                     );
