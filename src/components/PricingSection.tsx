@@ -8,18 +8,20 @@ const PACKAGES = [
     tagline: 'Ekspert dostępny 24/7, który odpowiada zamiast Twojego BOK-u i prowadzi klienta do właściwego produktu.',
     accent: 'emerald',
     icon: 'fa-graduation-cap',
-    inheritLabel: null,
+    inherits: [] as string[],
     gains: [
       { icon: 'fa-clock', text: 'Zero czekania — klient dostaje odpowiedź natychmiast, o każdej porze' },
-      { icon: 'fa-shield-halved', text: 'Mniej porzuceń koszyka przez brak wiedzy o składach i dawkowaniu' },
-      { icon: 'fa-language', text: 'Obsługa klientów po polsku, angielsku i ukraińsku bez dodatkowego etatu' },
+      { icon: 'fa-shield-halved', text: 'Mniej porzuceń przez brak wiedzy — agent edukuje i prowadzi do zakupu' },
+      { icon: 'fa-language', text: 'Obsługa po polsku, angielsku i ukraińsku bez dodatkowego etatu' },
     ],
     startup: [
       'Agent odpowiada na pytania o składy, alergeny, dawkowanie i dobór produktu pod cel klienta',
       'Baza wiedzy o całym katalogu SFD (architektura RAG — zawsze aktualna, semantyczna)',
       'Kieruje ruch do właściwych kategorii i produktów w sklepie',
-      'Wielojęzyczność: polski, angielski, ukraiński — bez dodatkowej konfiguracji',
-      'Bezpieczne odpowiedzi: automatyczny disclaimer przy pytaniach zdrowotnych i lekowych',
+      'Wielojęzyczność: polski, angielski, ukraiński bez dodatkowej konfiguracji',
+      'Bezpieczne odpowiedzi: automatyczny disclaimer przy pytaniach zdrowotnych',
+      'Odpowiedzi pojawiają się słowo po słowie (streaming) — wrażenie jak ChatGPT, zero czekania',
+      'Proaktywny dymek: po 15 sek. na stronie zachęca do rozmowy i proponuje pomoc',
     ] as FeatureItem[],
     note: 'Pakiet bez integracji koszyka — agent generuje linki do produktów i kieruje do sklepu.',
     monthly: [
@@ -35,21 +37,23 @@ const PACKAGES = [
     id: 'medium',
     name: 'Medium',
     subtitle: 'Doradca + Sprzedawca',
-    tagline: 'Sprzedawca, który zna stan magazynu na żywo, dobiera zestawy, stosuje cross-selling i nie pozwala klientowi wyjść z pustymi rękoma.',
+    tagline: 'Wszystko co Basic, plus sprzedawca który zna magazyn na żywo, dobiera zestawy i nie pozwala klientowi wyjść z pustymi rękoma.',
     accent: 'blue',
     icon: 'fa-headset',
-    inheritLabel: 'Wszystko z pakietu Basic, plus:',
+    inherits: ['Basic'],
     gains: [
-      { icon: 'fa-arrow-trend-up', text: 'Wzrost średniej wartości koszyka dzięki spersonalizowanym zestawom i cross-sellingowi' },
-      { icon: 'fa-warehouse', text: 'Agent sprawdza dostępność w czasie rzeczywistym — żadnych zamówień na brak towaru' },
-      { icon: 'fa-flask', text: 'Kalkulator suplementacji: klient podaje wagę i cel, agent oblicza dawki i rekomenduje produkt' },
+      { icon: 'fa-arrow-trend-up', text: 'Wzrost średniej wartości koszyka dzięki zestawom i cross-sellingowi' },
+      { icon: 'fa-warehouse', text: 'Agent sprawdza dostępność live — żadnych zamówień na brak towaru' },
+      { icon: 'fa-camera', text: 'Klient wysyła zdjęcie suplementu konkurencji — agent proponuje lepszy odpowiednik SFD' },
     ],
     startup: [
       'Integracja z API magazynu SFD: stany, smaki, ceny i rabaty w czasie rzeczywistym',
-      'Spersonalizowane strategie sprzedażowe: cross-selling i up-selling dopasowane do celu klienta',
-      'Kalkulator suplementacji: agent pyta o wagę, cel i intensywność treningów, dobiera dawkowanie i produkt',
+      'Spersonalizowane strategie sprzedażowe: cross-selling i up-selling pod cel klienta',
+      'Kalkulator suplementacji: agent pyta o wagę, cel i intensywność, dobiera dawkowanie',
       'Automatyczne sugestie zestawów (np. spalacz + L-karnityna + białko na redukcji)',
-      'Monitoring rozmów i „toku myślowego" agenta w czasie rzeczywistym (LangSmith)',
+      'Gotowy koszyk jednym zdaniem: „zrób mi zestaw na redukcję do 200 zł" → agent kompletuje i optymalizuje',
+      'Analiza zdjęcia etykiety (Vision AI): klient fotografuje suplement, agent porównuje skład i proponuje produkt SFD',
+      'Monitoring rozmów i toku myślowego agenta w czasie rzeczywistym (LangSmith)',
     ] as FeatureItem[],
     note: null,
     monthly: [
@@ -58,29 +62,30 @@ const PACKAGES = [
       'Tarcza bezpieczeństwa: blokada prób manipulacji i prompt injection',
       'SLA: reakcja do 24h roboczych, raport miesięczny z wynikami konwersji',
     ] as FeatureItem[],
-    example: '„Chcę schudnąć 10 kg do wakacji, ważę 90 kg i trenuję 3x w tygodniu." → agent oblicza optymalną dawkę L-karnityny, dobiera spalacz bez stymulantów (wykrył nadciśnienie) i proponuje gotowy zestaw z ceną.',
+    example: '„Chcę schudnąć 10 kg do wakacji, ważę 90 kg." → agent oblicza dawki, dobiera zestaw bez stymulantów (wykrył nadciśnienie), kompletuje koszyk w limicie 150 zł i proponuje zamiennik gdy produkt niedostępny.',
     highlighted: false,
   },
   {
     id: 'premium',
     name: 'Premium',
     subtitle: 'Autonomiczny Asystent E-commerce',
-    tagline: 'Agent z pełnymi uprawnieniami: sam kompletuje koszyk, zarządza ilościami, prowadzi klienta do kasy i pamięta każdą jego preferencję.',
+    tagline: 'Wszystko co Basic i Medium, plus agent z pełnymi uprawnieniami: sam kompletuje koszyk, mówi głosem i pamięta każdego klienta.',
     accent: 'purple',
     icon: 'fa-rocket',
-    inheritLabel: 'Wszystko z pakietów Basic i Medium, plus:',
+    inherits: ['Basic', 'Medium'],
     gains: [
-      { icon: 'fa-cart-arrow-down', text: 'Pełna automatyzacja koszyka — klient mówi „dodaj 2 białka waniliowe", agent to robi natychmiast' },
-      { icon: 'fa-microphone', text: 'Obsługa głosowa: klient nagrywa wiadomość zamiast pisać, agent transkrybuje i odpowiada' },
-      { icon: 'fa-chart-line', text: 'Dedykowany panel ROI dla Zarządu: ile sprzedał agent, które produkty, jakie zestawy' },
+      { icon: 'fa-cart-arrow-down', text: 'Pełna automatyzacja koszyka — klient mówi „dodaj 2 białka waniliowe", agent to robi' },
+      { icon: 'fa-volume-high', text: 'Agent odpowiada głosem — pełne doświadczenie voice jak ChatGPT Advanced Voice' },
+      { icon: 'fa-chart-line', text: 'Panel ROI dla Zarządu: ile sprzedał agent, które produkty, jakie zestawy konwertują' },
     ],
     startup: [
-      'Pełna automatyzacja koszyka przez API: dodawanie, zmiana ilości, usuwanie produktów na komendę klienta',
-      'Wiadomości głosowe: klient nagrywa zamiast pisać, Whisper AI transkrybuje, agent odpowiada',
+      'Pełna automatyzacja koszyka przez API: dodawanie, zmiana ilości, usuwanie na komendę głosową lub tekstową',
+      'Agent mówi głosem (TTS): odpowiedzi czytane naturalnym głosem, idealne na mobile',
+      'Wiadomości głosowe: klient nagrywa zamiast pisać, Whisper AI transkrybuje w ułamku sekundy',
       'Red Teaming i zaawansowane zabezpieczenia anty prompt-injection',
-      'Dedykowany panel analityczny dla Zarządu: sprzedaż, konwersja, najczęstsze zestawy',
+      'Dedykowany panel analityczny: sprzedaż, konwersja, najczęstsze zestawy, ROI agenta',
       { text: 'Pamięć klienta między sesjami: agent zapamiętuje cel, preferencje i historię rozmów', addon: true },
-      { text: 'Proaktywne alerty SMS/e-mail: powiadomienie gdy oglądany produkt wchodzi w promocję', addon: true },
+      { text: 'Alerty e-mail o promocji: powiadomienie gdy oglądany produkt wchodzi w wyprzedaż', addon: true },
     ] as FeatureItem[],
     note: null,
     monthly: [
@@ -89,7 +94,7 @@ const PACKAGES = [
       'Comiesięczny biznesowy raport ROI dla Zarządu z rekomendacjami',
       'SLA priorytetowe: reakcja do 12h, dyżury weekendowe',
     ] as FeatureItem[],
-    example: '„Dorzuć 2x czekoladowe białko, tańszy spalacz i shaker, i zamów to na mój adres." → agent kompletuje koszyk, potwierdza każdą pozycję, proponuje tańszy zamiennik spalacza w promocji i przekierowuje do kasy z gotowym zamówieniem.',
+    example: '„Dorzuć 2x czekoladowe białko i tańszy spalacz, i zamów na mój adres." → agent kompletuje koszyk głosowo, proponuje Redox w aktualnej promocji zamiast pełnej ceny i przekierowuje do kasy z gotowym zamówieniem.',
     highlighted: true,
   },
 ];
@@ -101,6 +106,7 @@ const ACCENT = {
     check: 'text-emerald-500',
     gainBg: 'bg-emerald-50/70 border-emerald-100',
     gainIcon: 'text-emerald-500',
+    inheritBg: 'bg-emerald-100 text-emerald-700',
     subBg: 'bg-emerald-50/60 border-emerald-100',
     subIcon: 'text-emerald-600',
   },
@@ -110,6 +116,7 @@ const ACCENT = {
     check: 'text-sfd-blue',
     gainBg: 'bg-sfd-light/60 border-sfd-blue/15',
     gainIcon: 'text-sfd-blue',
+    inheritBg: 'bg-sfd-light text-sfd-blue',
     subBg: 'bg-sfd-light/50 border-sfd-blue/15',
     subIcon: 'text-sfd-blue',
   },
@@ -119,16 +126,22 @@ const ACCENT = {
     check: 'text-purple-500',
     gainBg: 'bg-purple-50/70 border-purple-100',
     gainIcon: 'text-purple-500',
+    inheritBg: 'bg-purple-100 text-purple-700',
     subBg: 'bg-purple-50/60 border-purple-100',
     subIcon: 'text-purple-600',
   },
 } as const;
 
+const TIER_COLORS: Record<string, string> = {
+  Basic: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Medium: 'bg-sfd-light text-sfd-blue border-sfd-blue/20',
+};
+
 export default function PricingSection() {
   return (
     <section className="mb-10">
       {/* Nagłówek sekcji */}
-      <div className="text-center max-w-2xl mx-auto mb-8">
+      <div className="text-center max-w-2xl mx-auto mb-6">
         <span className="bg-sfd-blue/10 text-sfd-blue text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
           <i className="fa-solid fa-box-open mr-1" />
           Warianty wdrożenia
@@ -142,9 +155,33 @@ export default function PricingSection() {
         <p className="text-slate-600 text-sm md:text-base leading-relaxed">
           Panie Mateuszu, agent którego właśnie Pan przetestował to działający prototyp,
           a możliwość automatycznego kompletowania koszyka to już funkcjonalność z najwyższego
-          pakietu Premium. Poniżej trzy warianty wdrożenia: od edukatora odciążającego BOK,
-          po w pełni autonomicznego sprzedawcę domykającego koszyk.
+          pakietu Premium. Każdy wyższy pakiet zawiera wszystko z poprzedniego i dodaje nowy poziom automatyzacji.
         </p>
+      </div>
+
+      {/* Pasek postępu: Basic → Medium → Premium */}
+      <div className="flex items-center justify-center gap-0 mb-8 max-w-lg mx-auto">
+        {['Basic', 'Medium', 'Premium'].map((tier, i) => (
+          <div key={tier} className="flex items-center">
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+              tier === 'Basic' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+              tier === 'Medium' ? 'bg-sfd-light text-sfd-blue border-sfd-blue/20' :
+              'bg-purple-100 text-purple-700 border-purple-200'
+            }`}>
+              <i className={`fa-solid ${
+                tier === 'Basic' ? 'fa-graduation-cap' :
+                tier === 'Medium' ? 'fa-headset' : 'fa-rocket'
+              } text-[10px]`} />
+              {tier}
+            </div>
+            {i < 2 && (
+              <div className="flex items-center mx-1">
+                <div className="w-6 h-px bg-slate-300" />
+                <i className="fa-solid fa-chevron-right text-[9px] text-slate-400" />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Kafelki */}
@@ -153,7 +190,6 @@ export default function PricingSection() {
           const c = ACCENT[pkg.accent as keyof typeof ACCENT];
           return (
             <div key={pkg.id} className="flex flex-col gap-4 h-full">
-              {/* ── Kafelek główny: NA STARCIE ── */}
               <div
                 className={`relative bg-white rounded-2xl border flex flex-col flex-1 overflow-hidden transition-all duration-300 hover:shadow-lg ${
                   pkg.highlighted
@@ -187,6 +223,20 @@ export default function PricingSection() {
 
                   <p className="text-sm text-slate-600 mb-4 leading-relaxed">{pkg.tagline}</p>
 
+                  {/* Żetony dziedziczenia */}
+                  {pkg.inherits.length > 0 && (
+                    <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Zawiera:</span>
+                      {pkg.inherits.map((tier) => (
+                        <span key={tier} className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${TIER_COLORS[tier]}`}>
+                          <i className="fa-solid fa-check text-[8px]" />
+                          {tier}
+                        </span>
+                      ))}
+                      <span className="text-[10px] text-slate-400 font-semibold">+ nowe funkcje poniżej</span>
+                    </div>
+                  )}
+
                   {/* Co zyskujesz */}
                   <div className={`rounded-xl border p-3.5 mb-4 space-y-2 ${c.gainBg}`}>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
@@ -213,14 +263,11 @@ export default function PricingSection() {
                   {/* Nagłówek funkcji */}
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
                     <i className={`fa-solid fa-flag-checkered ${c.subIcon}`} />
-                    Co dostajesz na starcie (wdrożenie)
+                    {pkg.inherits.length > 0 ? 'Nowe funkcje w tym pakiecie' : 'Co dostajesz na starcie'}
                   </p>
 
-                  {/* Lista funkcji startowych */}
+                  {/* Lista funkcji */}
                   <ul className="space-y-2.5 mb-3 flex-1">
-                    {pkg.inheritLabel && (
-                      <li className="text-sm font-bold text-slate-800">{pkg.inheritLabel}</li>
-                    )}
                     {pkg.startup.map((f, i) => {
                       const isAddon = typeof f === 'object' && f.addon;
                       const text = typeof f === 'object' ? f.text : f;
@@ -258,7 +305,7 @@ export default function PricingSection() {
                 </div>
               </div>
 
-              {/* ── Kafelek poniżej: SUBSKRYPCJA MIESIĘCZNA ── */}
+              {/* Subskrypcja miesięczna */}
               <div className={`rounded-2xl border ${c.subBg} p-5`}>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <i className={`fa-solid fa-arrows-rotate ${c.subIcon}`} />
