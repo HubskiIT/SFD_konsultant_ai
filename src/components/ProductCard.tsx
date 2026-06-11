@@ -108,7 +108,7 @@ export default function ProductCard({ product, onAddToCart, compact = false }: P
             <button
               onClick={handleAdd}
               disabled={isAdded}
-              className={`w-full sm:w-auto text-white text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`w-full text-white text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 isAdded
                   ? 'bg-emerald-500 cursor-default'
                   : 'bg-sfd-gradient-btn hover:opacity-90'
@@ -122,7 +122,7 @@ export default function ProductCard({ product, onAddToCart, compact = false }: P
               ) : (
                 <>
                   <i className="fa-solid fa-cart-plus" />
-                  Dodaj do koszyka
+                  {compact ? 'Do koszyka' : 'Dodaj do koszyka'}
                 </>
               )}
             </button>
