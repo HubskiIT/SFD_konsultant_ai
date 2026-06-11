@@ -75,7 +75,6 @@ const PACKAGES = [
     inherits: ['Basic', 'Medium'],
     gains: [
       { icon: 'fa-cart-arrow-down', text: 'Pełna automatyzacja koszyka — klient mówi „dodaj 2 białka waniliowe", agent to robi' },
-      { icon: 'fa-volume-high', text: 'Agent odpowiada głosem — pełne doświadczenie voice jak ChatGPT Advanced Voice' },
       { icon: 'fa-chart-line', text: 'Panel ROI dla Zarządu: ile sprzedał agent, które produkty, jakie zestawy konwertują' },
     ],
     startup: [
