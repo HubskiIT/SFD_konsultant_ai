@@ -151,6 +151,7 @@ export default function ChatWidget() {
     setIsLoading(true);
 
     const botId = (Date.now() + 1).toString();
+    let accText = '';
 
     try {
       const res = await fetch('/api/chat', {
@@ -168,7 +169,6 @@ export default function ChatWidget() {
       const decoder = new TextDecoder();
       let buffer = '';
       let toolInvocations: unknown[] = [];
-      let accText = '';
 
       const botMsg: Message = { id: botId, role: 'assistant', content: '' };
       setMessages([...newMessages, botMsg]);
@@ -320,11 +320,18 @@ export default function ChatWidget() {
       return;
     } catch (err) {
       console.error('Chat error:', err);
-      setMessages([...newMessages, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Przepraszam, mam chwilowy problem z polaczeniem. Sprobuj ponownie za moment.',
-      }]);
+      // Jesli czesc odpowiedzi juz doszla, zachowaj ja zamiast kasowac do erroru.
+      if (accText.trim()) {
+        setMessages(prev => prev.map(m =>
+          m.id === botId ? { ...m, content: accText } : m
+        ));
+      } else {
+        setMessages([...newMessages, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Przepraszam, mam chwilowy problem z polaczeniem. Sprobuj ponownie za moment.',
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }
