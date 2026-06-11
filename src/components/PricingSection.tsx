@@ -38,7 +38,6 @@ const PACKAGES = [
       'Zoptymalizowane scenariusze sprzedażowe (cross-selling)',
       'Monitoring rozmów i „procesu myślowego" agenta (LangSmith)',
       'Kalkulator suplementacji: spersonalizowane dawkowanie na podstawie wagi, celu i planu treningowego',
-      { text: 'Analiza zdjęcia etykiety (Vision AI): klient wysyła zdjęcie swojego suplementu, agent odczytuje skład i dobiera produkty SFD', addon: true },
     ] as FeatureItem[],
     note: null,
     monthly: [
