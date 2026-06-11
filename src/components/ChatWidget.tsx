@@ -73,23 +73,32 @@ function extractProductsFromParts(message: Message): Product[] {
     if (part.type === 'tool-invocation' && part.toolInvocation) {
       const invocation = part.toolInvocation;
       const validTools = ['recommend_products', 'search_products', 'get_joint_products', 'get_safe_products'];
-      
-      if (
-        validTools.includes(invocation.toolName) &&
-        invocation.state === 'result'
-      ) {
-        const result = invocation.result;
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            const productId = item?.productId || item?.id;
-            if (productId) {
-              // Try to find in our product database
-              const product = products.find((p) => p.id === productId);
-              // Only add if not already in the list to avoid duplicates, and limit to max 6
-              if (product && !found.some(p => p.id === product.id) && found.length < 6) {
-                found.push(product);
-              }
+
+      if (!validTools.includes(invocation.toolName)) continue;
+
+      // Obsługujemy zarówno format z state='result' jak i bezpośredni format z args
+      const result = invocation.result;
+      const args = invocation.args;
+
+      // Jeśli mamy result z tablicą produktów
+      if (Array.isArray(result)) {
+        for (const item of result) {
+          const productId = item?.productId || item?.id;
+          if (productId) {
+            const product = products.find((p) => p.id === productId);
+            if (product && !found.some(p => p.id === product.id) && found.length < 6) {
+              found.push(product);
             }
+          }
+        }
+      }
+
+      // Jeśli mamy args z tablicą productIds (format naszego backendu)
+      if (found.length === 0 && args?.productIds && Array.isArray(args.productIds)) {
+        for (const productId of args.productIds) {
+          const product = products.find((p) => p.id === productId);
+          if (product && !found.some(p => p.id === product.id) && found.length < 6) {
+            found.push(product);
           }
         }
       }
@@ -572,9 +581,24 @@ export default function ChatWidget() {
                       Konsultant SFD
                     </p>
 
-                    {/* Render text content with line breaks */}
+                    {/* Render text content with basic markdown (bold, italic, line breaks) */}
                     {textContent && (
-                      <div className="whitespace-pre-wrap">{textContent}</div>
+                      <div className="leading-relaxed">
+                        {textContent.split('\n').map((line, li) => {
+                          if (!line.trim()) return <br key={li} />;
+                          const parts: React.ReactNode[] = [];
+                          const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+                          let last = 0, m;
+                          while ((m = regex.exec(line)) !== null) {
+                            if (m.index > last) parts.push(line.slice(last, m.index));
+                            if (m[2]) parts.push(<strong key={m.index}>{m[2]}</strong>);
+                            else if (m[3]) parts.push(<em key={m.index}>{m[3]}</em>);
+                            last = m.index + m[0].length;
+                          }
+                          if (last < line.length) parts.push(line.slice(last));
+                          return <p key={li} className="mb-1 last:mb-0">{parts}</p>;
+                        })}
+                      </div>
                     )}
 
                     {/* Render product cards inline */}
