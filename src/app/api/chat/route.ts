@@ -81,10 +81,11 @@ function validateOutput(text: string): string {
   cleaned = cleaned.replace(/!\[.*?\]\([^)]+\)/g, '');
   cleaned = cleaned.replace(/\[.*?\]\([^)]+\)/g, '');
 
-  // Zabezpieczenie: model czasem wpisuje skladnie narzedzia jako tekst
-  // (np. 'recommend_products(["wpc82"])' albo emoji + nazwa) zamiast je wywolac.
-  // Wytnij takie fragmenty wraz z poprzedzajacym zwiastunem typu "Oto karty produktow:".
+  // Wytnij skladnie wywolan narzedzi jesli model je wpisal jako tekst
   cleaned = cleaned.replace(/[^.!?\n]*\b(?:recommend_products|add_to_cart|update_cart_quantity|remove_from_cart|search_products|get_safe_products|get_joint_products|check_live_availability)\s*\([^)]*\)\.?/g, '');
+
+  // Wytnij meta-zwiastuny (model zapowiada akcje zamiast ja wykonac)
+  cleaned = cleaned.replace(/[^\n.!?]*(?:Oto (?:karty|produkty)|Wyświetlę karty|Zaraz pokażę|Pokażę Ci (?:karty|produkty)|wyświetlam produkty|wyświetlę produkty)[^\n.!?]*[.!\n]?/gi, '');
 
   return cleaned.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
