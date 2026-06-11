@@ -567,7 +567,7 @@ export default function ChatWidget() {
 
               // Forcefully hide redundant markdown lists if we are rendering product cards
               if (recommendedProducts.length > 0 && textContent) {
-                const listIndex = textContent.search(/\n\s*(?:1\.|\-|\*)\s+/);
+                const listIndex = textContent.search(/\n\s*(?:1\.|\-|\*|#{1,3})\s+/);
                 if (listIndex !== -1) {
                   textContent = textContent.substring(0, listIndex).trim();
                 }
