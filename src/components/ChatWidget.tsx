@@ -351,11 +351,26 @@ export default function ChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  /* Dymek-zachęta: pokaż po chwili, dopóki klient nie otworzy/nie zamknie go */
+  /* Dymek-zachęta: pierwszy raz po 2s, widoczny ~7s, potem wraca co 10s
+     dopóki klient go nie zamknie (X) ani nie otworzy czatu. */
   useEffect(() => {
     if (teaserDismissed || isOpen) return;
-    const t = setTimeout(() => setShowTeaser(true), 15000);
-    return () => clearTimeout(t);
+    let showTimer: ReturnType<typeof setTimeout>;
+    let hideTimer: ReturnType<typeof setTimeout>;
+    const cycle = (delay: number) => {
+      showTimer = setTimeout(() => {
+        setShowTeaser(true);
+        hideTimer = setTimeout(() => {
+          setShowTeaser(false);
+          cycle(10000); // ponów po 10s jeśli nikt nie kliknął
+        }, 7000);
+      }, delay);
+    };
+    cycle(2000); // pierwszy raz po 2s
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
   }, [teaserDismissed, isOpen]);
 
   /* Toast helper */
@@ -439,10 +454,10 @@ export default function ChatWidget() {
               <i className="fa-solid fa-xmark" />
             </button>
             <p className="text-[13px] font-bold text-slate-800 leading-snug whitespace-nowrap">
-              Cześć! Jestem konsultantem SFD
+              Nie wiesz, co wybrać? 💪
             </p>
             <p className="text-[12px] text-slate-500 leading-snug mt-0.5 whitespace-nowrap">
-              W czym mogę Ci pomóc?
+              Dobiorę suplementy pod Twój cel w 30 sekund.
             </p>
           </div>
         </div>

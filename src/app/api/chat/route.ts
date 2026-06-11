@@ -90,6 +90,38 @@ function validateOutput(text: string): string {
   return cleaned.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// Wzorce nazw produktow -> ID. Gdy model wypisze produkt tekstem zamiast
+// wywolac recommend_products, odzyskujemy ID i dorzucamy karty.
+const NAME_PATTERNS: { id: string; rx: RegExp }[] = [
+  { id: 'wpc82', rx: /\bWPC\s*82\b|bia[lł]k[oa]\s+WPC/i },
+  { id: 'fatBurnerSFD', rx: /\bFat\s*Burner\b/i },
+  { id: 'redoxHardcore', rx: /\bRedox\s*Hardcore\b|\bRedox\b/i },
+  { id: 'lCarnitine', rx: /\bL[-\s]?Carnitine\b|\bL[-\s]?karnityn/i },
+  { id: 'shakerSFDPremium', rx: /\bShaker\s*Premium\b.*SFD|\bSFD\b.*Shaker\s*Premium/i },
+  { id: 'shakerAllnutrition', rx: /\bALLNUTRITION\b.*Shaker|Shaker.*ALLNUTRITION/i },
+  { id: 'shakerSFD', rx: /\bShaker\b/i },
+];
+
+function recoverProductIds(text: string): string[] {
+  const ids: string[] = [];
+
+  // 1) Skladnia recommend_products(["id", ...]) wpisana jako tekst
+  const call = text.match(/recommend_products\s*\(\s*\[([^\]]*)\]\s*\)/);
+  if (call) {
+    for (const m of call[1].matchAll(/["']([\w-]+)["']/g)) {
+      if (getProductById(m[1]) && !ids.includes(m[1])) ids.push(m[1]);
+    }
+  }
+  if (ids.length > 0) return ids;
+
+  // 2) Nazwy produktow wymienione w tresci (np. lista "1. Bia[lł]ko WPC 82...")
+  //    Dopasowujemy specyficzne wzorce przed ogolnym "Shaker".
+  for (const { id, rx } of NAME_PATTERNS) {
+    if (rx.test(text) && !ids.includes(id)) ids.push(id);
+  }
+  return ids.slice(0, 6);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SYSTEM PROMPT — 8 sekcji
 // ─────────────────────────────────────────────────────────────────────────────
@@ -556,14 +588,10 @@ async function callOpenAI(messages: unknown[], stream = false) {
   }
 }
 
-// Odczytaj streaming SSE z OpenAI i zbierz pełny tekst (dla tool-calling loop)
+// Tool-calling loop dziala non-stream (narzedzia wykonujemy sekwencyjnie);
+// finalny tekst streamujemy do klienta znak po znaku w sendStream().
 async function callOpenAINonStream(messages: unknown[]) {
   return callOpenAI(messages, false);
-}
-
-// Zwraca ReadableStream tokenów SSE → dla finalnej odpowiedzi tekstowej
-async function streamOpenAI(messages: unknown[]): Promise<Response> {
-  return callOpenAI(messages, true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -637,58 +665,6 @@ export async function POST(req: Request) {
     });
   };
 
-  // Helper: proxy prawdziwego OpenAI streamu do klienta, z prefixem toolInvocations
-  const proxyStream = (openAIRes: Response) => {
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        // Wyslij narzedzia najpierw
-        controller.enqueue(encoder.encode(
-          `data: ${JSON.stringify({ type: 'tools', toolInvocations })}\n\n`
-        ));
-        // Streamuj tokeny z OpenAI
-        const reader = openAIRes.body!.getReader();
-        let buffer = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() ?? '';
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data:')) continue;
-            const raw = trimmed.slice(5).trim();
-            if (raw === '[DONE]') {
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-              controller.close();
-              return;
-            }
-            try {
-              const chunk = JSON.parse(raw);
-              const token = chunk.choices?.[0]?.delta?.content;
-              if (token) {
-                controller.enqueue(encoder.encode(
-                  `data: ${JSON.stringify({ type: 'token', token })}\n\n`
-                ));
-              }
-            } catch { /* ignoruj bledne chunki */ }
-          }
-        }
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-        controller.close();
-      },
-    });
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    });
-  };
-
   // ── TOOL-CALLING LOOP (max 5 iterations) ──
   for (let i = 0; i < 5; i++) {
     const res = await callOpenAINonStream(messages);
@@ -741,31 +717,25 @@ export async function POST(req: Request) {
       continue;
     }
 
-    // Odzyskiwanie kart gdy model wpisal recommend_products() jako tekst
+    // Finalna odpowiedz tekstowa (model nie wywolal narzedzi w tej turze)
     const rawContent = assistantMessage.content || '';
-    const textualCall = rawContent.match(/recommend_products\s*\(\s*\[([^\]]*)\]\s*\)/);
-    if (textualCall && !toolInvocations.some((ti) => ti.toolName === 'recommend_products')) {
-      const ids = [...textualCall[1].matchAll(/["']([\w-]+)["']/g)]
-        .map((m) => m[1])
-        .filter((id) => Boolean(getProductById(id)));
-      if (ids.length > 0) {
+
+    // ── ODZYSKIWANIE KART (gdy model wypisal produkty tekstem zamiast wywolac narzedzie) ──
+    if (!toolInvocations.some((ti) => ti.toolName === 'recommend_products')) {
+      const recovered = recoverProductIds(rawContent);
+      if (recovered.length > 0) {
         toolInvocations.push({
           toolCallId: `recovered_${Date.now()}`,
           toolName: 'recommend_products',
-          args: { productIds: ids },
-          result: ids.map((id) => ({ productId: id })),
+          args: { productIds: recovered },
+          result: recovered.map((id) => ({ productId: id })),
           state: 'result',
         });
       }
     }
 
-    // Finalna odpowiedz tekstowa — streamuj prawdziwe tokeny z OpenAI
-    messages.push({ role: 'assistant', content: rawContent });
-    const streamRes = await streamOpenAI(messages.slice(0, -1)); // bez ostatniej assistant msg
-    if (!streamRes.ok) {
-      return sendStream(validateOutput(rawContent));
-    }
-    return proxyStream(streamRes);
+    // Streamuj gotowy tekst znak po znaku (bez drugiego wywolania LLM — bez kosztu i rozjazdu)
+    return sendStream(rawContent);
   }
 
   return sendStream('Przepraszam, nie moglem przetworzyc Twojego zapytania. Sprobuj ponownie.');
