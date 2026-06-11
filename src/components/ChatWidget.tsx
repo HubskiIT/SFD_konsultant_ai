@@ -419,11 +419,11 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* ─── FAB Button ─────────────────────────────────── */}
+      {/* ─── FAB Button — ukryty gdy czat otwarty (header ma już X) ── */}
       <button
         onClick={handleToggle}
-        className={`fixed z-[1000] w-[62px] h-[62px] rounded-full bg-sfd-gradient text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
-          !isOpen ? 'animate-fab-pulse' : ''
+        className={`fixed z-[1000] w-[62px] h-[62px] rounded-full bg-sfd-gradient text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 animate-fab-pulse ${
+          isOpen ? 'hidden' : ''
         }`}
         style={{ bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', right: '20px' }}
         aria-label="Otwórz konsultanta AI"
