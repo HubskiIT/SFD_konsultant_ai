@@ -1,5 +1,27 @@
 @import 'tailwindcss';
 
+/* ─── Mobile / iOS Foundations ───────────────────────────── */
+html {
+  /* Smooth scroll na iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Zapobiega auto-zoomowi na input focus w Safari */
+  touch-action: manipulation;
+}
+
+body {
+  /* Wyłącz podświetlenie tapnięcia na iOS (szary flash) */
+  -webkit-tap-highlight-color: transparent;
+  /* Zapobiega zaznaczaniu tekstu przy długim przytrzymaniu */
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+}
+
+/* Bezpieczny obszar dla notcha / home indicator iPhone */
+:root {
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sat: env(safe-area-inset-top, 0px);
+}
+
 @theme {
   --color-sfd-blue: #0c2af8;
   --color-sfd-dark: #00228f;

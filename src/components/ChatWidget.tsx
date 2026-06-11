@@ -393,7 +393,7 @@ export default function ChatWidget() {
     <>
       {/* ─── Dymek-zachęta (gdy czat zwinięty) ──────────── */}
       {!isOpen && showTeaser && (
-        <div className="fixed bottom-[30px] right-[94px] z-[1000] animate-slide-in-right">
+        <div className="fixed right-[94px] z-[1000] animate-slide-in-right" style={{ bottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
           <div
             onClick={handleToggle}
             className="animate-teaser-float relative bg-white rounded-2xl rounded-br-none shadow-xl border border-slate-100 pl-3.5 pr-8 py-2.5 cursor-pointer hover:shadow-2xl transition-shadow"
@@ -422,9 +422,10 @@ export default function ChatWidget() {
       {/* ─── FAB Button ─────────────────────────────────── */}
       <button
         onClick={handleToggle}
-        className={`fixed bottom-5 right-5 z-[1000] w-[62px] h-[62px] rounded-full bg-sfd-gradient text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
+        className={`fixed z-[1000] w-[62px] h-[62px] rounded-full bg-sfd-gradient text-white shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 ${
           !isOpen ? 'animate-fab-pulse' : ''
         }`}
+        style={{ bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', right: '20px' }}
         aria-label="Otwórz konsultanta AI"
       >
         {isOpen ? (
@@ -447,11 +448,15 @@ export default function ChatWidget() {
           className={
             isExpanded
               ? 'fixed inset-0 sm:inset-10 z-[999] bg-white sm:rounded-2xl shadow-2xl border-0 sm:border border-slate-200 flex overflow-hidden animate-fade-in'
-              : `fixed bottom-[90px] left-4 right-4 sm:left-auto sm:w-[460px] max-h-[760px] h-[calc(100vh-80px)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
+              : `fixed left-4 right-4 sm:left-auto sm:w-[460px] max-h-[760px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999] flex flex-col overflow-hidden ${
                   isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
                 }`
           }
-          style={!isExpanded ? { maxWidth: 'calc(100vw - 32px)' } : {}}
+          style={!isExpanded ? {
+            maxWidth: 'calc(100vw - 32px)',
+            bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))',
+            height: 'calc(100vh - 80px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px))',
+          } : {}}
         >
           {/* Chat Column */}
           <div className="flex-1 flex flex-col min-w-0 relative h-full">
@@ -664,7 +669,8 @@ export default function ChatWidget() {
                 value={input || ''}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Wpisz np. 'chcę schudnąć', 'jaki spalacz?'..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sfd-blue focus:border-transparent transition-all placeholder:text-slate-400"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-sfd-blue focus:border-transparent transition-all placeholder:text-slate-400"
+                style={{ fontSize: '16px' }}
                 disabled={isLoading}
               />
               <button

@@ -53,10 +53,10 @@ export default function Home() {
       </header>
 
       {/* ─── Main Content ────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Hero / Info Card */}
         <div className="relative mb-10">
-          <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg p-8 md:p-10 overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg p-5 sm:p-8 md:p-10 overflow-hidden">
             {/* Decorative gradient blobs */}
             <div className="absolute -top-20 -right-20 w-60 h-60 bg-sfd-blue/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-sfd-accent/10 rounded-full blur-3xl pointer-events-none" />
@@ -72,7 +72,7 @@ export default function Home() {
                 </span>
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-3">
                 SFD Smart Shopping{' '}
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-sfd-blue to-sfd-accent">
                   AI Agent
