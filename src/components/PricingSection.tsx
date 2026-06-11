@@ -79,7 +79,6 @@ const PACKAGES = [
     ],
     startup: [
       'Pełna automatyzacja koszyka przez API: dodawanie, zmiana ilości, usuwanie na komendę głosową lub tekstową',
-      'Agent mówi głosem (TTS): odpowiedzi czytane naturalnym głosem, idealne na mobile',
       'Wiadomości głosowe: klient nagrywa zamiast pisać, Whisper AI transkrybuje w ułamku sekundy',
       'Red Teaming i zaawansowane zabezpieczenia anty prompt-injection',
       'Dedykowany panel analityczny: sprzedaż, konwersja, najczęstsze zestawy, ROI agenta',

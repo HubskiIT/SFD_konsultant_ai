@@ -528,8 +528,8 @@ async function executeTool(name: string, args: Record<string, unknown>) {
 // OpenAI API CALL
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function callOpenAI(messages: unknown[]) {
-  const MAX_RETRIES = 2; // ponawiamy przy rate-limicie (429) z OpenAI
+async function callOpenAI(messages: unknown[], stream = false) {
+  const MAX_RETRIES = 2;
   for (let attempt = 0; ; attempt++) {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -543,19 +543,27 @@ async function callOpenAI(messages: unknown[]) {
         tools: TOOLS,
         tool_choice: 'auto',
         max_tokens: 800,
+        stream,
       }),
     });
 
-    // Sukces albo blad inny niz rate-limit -> zwroc od razu
     if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
 
-    // Rate limit (TPM/RPM): odczekaj tyle, ile sugeruje OpenAI ("try again in Xs"),
-    // ograniczone do 8s, i ponow probe. Body 429 konsumujemy tu na potrzeby parsowania.
     const body = await res.text();
     const m = body.match(/try again in ([\d.]+)s/i);
     const waitMs = Math.min((m ? parseFloat(m[1]) * 1000 : 1500) + 300, 8000);
     await new Promise((r) => setTimeout(r, waitMs));
   }
+}
+
+// Odczytaj streaming SSE z OpenAI i zbierz pełny tekst (dla tool-calling loop)
+async function callOpenAINonStream(messages: unknown[]) {
+  return callOpenAI(messages, false);
+}
+
+// Zwraca ReadableStream tokenów SSE → dla finalnej odpowiedzi tekstowej
+async function streamOpenAI(messages: unknown[]): Promise<Response> {
+  return callOpenAI(messages, true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -599,29 +607,108 @@ export async function POST(req: Request) {
 
   const toolInvocations = [];
 
+  // Helper: wyslij odpowiedz jako SSE stream
+  const sendStream = (text: string) => {
+    const cleaned = validateOutput(text);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        // Najpierw wyslij toolInvocations jako pierwszy event
+        controller.enqueue(encoder.encode(
+          `data: ${JSON.stringify({ type: 'tools', toolInvocations })}\n\n`
+        ));
+        // Potem tekst znak po znaku (symulacja streamingu z gotowego tekstu)
+        // Uzywamy przy fast-path gdzie tekst juz mamy
+        for (const ch of cleaned) {
+          controller.enqueue(encoder.encode(
+            `data: ${JSON.stringify({ type: 'token', token: ch })}\n\n`
+          ));
+        }
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
+  };
+
+  // Helper: proxy prawdziwego OpenAI streamu do klienta, z prefixem toolInvocations
+  const proxyStream = (openAIRes: Response) => {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        // Wyslij narzedzia najpierw
+        controller.enqueue(encoder.encode(
+          `data: ${JSON.stringify({ type: 'tools', toolInvocations })}\n\n`
+        ));
+        // Streamuj tokeny z OpenAI
+        const reader = openAIRes.body!.getReader();
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data:')) continue;
+            const raw = trimmed.slice(5).trim();
+            if (raw === '[DONE]') {
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
+              return;
+            }
+            try {
+              const chunk = JSON.parse(raw);
+              const token = chunk.choices?.[0]?.delta?.content;
+              if (token) {
+                controller.enqueue(encoder.encode(
+                  `data: ${JSON.stringify({ type: 'token', token })}\n\n`
+                ));
+              }
+            } catch { /* ignoruj bledne chunki */ }
+          }
+        }
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
+  };
+
   // ── TOOL-CALLING LOOP (max 5 iterations) ──
   for (let i = 0; i < 5; i++) {
-    const res = await callOpenAI(messages);
+    const res = await callOpenAINonStream(messages);
     const data = await res.json();
 
     if (!res.ok) {
       console.error('OpenAI error:', JSON.stringify(data, null, 2));
-      // Zwracamy przyjazny tekst (nie blad), zeby frontend pokazal go jako
-      // normalna wiadomosc konsultanta zamiast wywalac sie z surowym bledem.
       const friendly = res.status === 429
         ? 'Przepraszam, mam teraz chwilowe przeciazenie. Daj mi sekundke i napisz jeszcze raz — juz sluze pomoca!'
         : 'Przepraszam, wystapil chwilowy problem techniczny. Sprobuj ponownie za moment.';
-      return Response.json({ text: friendly, toolInvocations });
+      return sendStream(friendly);
     }
 
     const choice = data.choices?.[0];
     const assistantMessage = choice?.message;
 
     if (!assistantMessage) {
-      return Response.json({ error: 'No response from OpenAI' }, { status: 500 });
+      return sendStream('Przepraszam, wystapil blad. Sprobuj ponownie.');
     }
 
-    // If the model wants to call tools
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       messages.push(assistantMessage);
 
@@ -633,7 +720,6 @@ export async function POST(req: Request) {
           tool_call_id: tc.id,
           content: JSON.stringify(toolResult),
         });
-
         toolInvocations.push({
           toolCallId: tc.id,
           toolName: tc.function.name,
@@ -643,26 +729,19 @@ export async function POST(req: Request) {
         });
       }
 
-      // FAST PATH: jesli wszystkie wywolane narzedzia to "akcje" (nie wymagaja
-      // wyniku do odpowiedzi) i model napisal juz tekst -> zwroc od razu,
-      // bez drugiego wywolania LLM.
+      // FAST PATH: terminal tools + model napisal tekst -> streamuj bez 2. LLM call
       const allTerminal = assistantMessage.tool_calls.every(
         (tc: { function: { name: string } }) => TERMINAL_TOOLS.has(tc.function.name),
       );
       const hasText = (assistantMessage.content || '').trim().length > 0;
       if (allTerminal && hasText) {
-        return Response.json({
-          text: validateOutput(assistantMessage.content),
-          toolInvocations,
-        });
+        return sendStream(assistantMessage.content);
       }
 
       continue;
     }
 
-    // ── ODZYSKIWANIE KART: model czasem wpisuje recommend_products([...])
-    // jako tekst zamiast wywolac narzedzie. Sparsuj ID i zsyntetyzuj
-    // prawdziwe wywolanie, zeby klient i tak zobaczyl karty.
+    // Odzyskiwanie kart gdy model wpisal recommend_products() jako tekst
     const rawContent = assistantMessage.content || '';
     const textualCall = rawContent.match(/recommend_products\s*\(\s*\[([^\]]*)\]\s*\)/);
     if (textualCall && !toolInvocations.some((ti) => ti.toolName === 'recommend_products')) {
@@ -680,14 +759,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // ── VALIDATION 3: Output validation ──
-    const finalText = validateOutput(rawContent);
-
-    return Response.json({
-      text: finalText,
-      toolInvocations,
-    });
+    // Finalna odpowiedz tekstowa — streamuj prawdziwe tokeny z OpenAI
+    messages.push({ role: 'assistant', content: rawContent });
+    const streamRes = await streamOpenAI(messages.slice(0, -1)); // bez ostatniej assistant msg
+    if (!streamRes.ok) {
+      return sendStream(validateOutput(rawContent));
+    }
+    return proxyStream(streamRes);
   }
 
-  return Response.json({ error: 'Too many tool call iterations' }, { status: 500 });
+  return sendStream('Przepraszam, nie moglem przetworzyc Twojego zapytania. Sprobuj ponownie.');
 }

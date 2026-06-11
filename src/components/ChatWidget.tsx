@@ -150,41 +150,68 @@ export default function ChatWidget() {
     setMessages(newMessages);
     setIsLoading(true);
 
+    const botId = (Date.now() + 1).toString();
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
       });
-      const data = await res.json();
 
-      // Backend zwraca przyjazny `text` nawet przy problemach. Gdyby jednak
-      // przyszedl czysty `error` (np. blad sieci), pokaz kulturalny komunikat
-      // jako wiadomosc konsultanta zamiast wywalac aplikacje.
-      if (data.error && !data.text) {
-        setMessages([...newMessages, {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: 'Przepraszam, wystapil chwilowy problem. Sprobuj ponownie za moment.',
-        }]);
-        return;
+      if (!res.ok || !res.body) {
+        throw new Error('Network error');
       }
 
-      // Create assistant message from JSON response
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
+      // Odczyt SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let toolInvocations: unknown[] = [];
+      let accText = '';
+
+      const botMsg: Message = { id: botId, role: 'assistant', content: '' };
+      setMessages([...newMessages, botMsg]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const raw = trimmed.slice(5).trim();
+          if (raw === '[DONE]') break;
+          try {
+            const event = JSON.parse(raw);
+            if (event.type === 'tools') {
+              toolInvocations = event.toolInvocations ?? [];
+            } else if (event.type === 'token') {
+              accText += event.token;
+              setMessages(prev => prev.map(m =>
+                m.id === botId ? { ...m, content: accText } : m
+              ));
+            }
+          } catch { /* ignoruj bledne chunki */ }
+        }
+      }
+
+      // Po zakonczeniu streamu — przetworz toolInvocations (koszyk, karty)
+      const data = { text: accText, toolInvocations };
+      const finalBotMsg: Message = {
+        id: botId,
         role: 'assistant',
-        content: data.text || '',
+        content: accText,
       };
 
-      // Handle tool invocations to display product cards correctly or add to cart
-      if (data.toolInvocations && data.toolInvocations.length > 0) {
-        botMsg.parts = [];
-        if (data.text) {
-          botMsg.parts.push({ type: 'text', text: data.text });
+      if (data.toolInvocations && (data.toolInvocations as unknown[]).length > 0) {
+        finalBotMsg.parts = [];
+        if (accText) {
+          finalBotMsg.parts.push({ type: 'text', text: accText });
         }
-        // Pomocniczo: dopasuj wariant produktu po etykiecie (jak agent ją poda).
-        // Odporne na odmiany (np. "Waniliowy" -> "Wanilia") dzięki najdłuższemu wspólnemu prefiksowi.
         const resolveVariant = (product: Product, variantLabel?: string) => {
           if (!variantLabel || product.variants.length === 1) return product.variants[0];
           const want = variantLabel.toLowerCase().trim();
@@ -224,7 +251,7 @@ export default function ChatWidget() {
           setTimeout(() => setToastVisible(false), 3500);
         };
 
-        for (const ti of data.toolInvocations) {
+        for (const ti of data.toolInvocations as { toolName: string; args: Record<string, unknown>; toolCallId: string; result: unknown; state: string }[]) {
           // Intercept add_to_cart and physically add the item!
           if (ti.toolName === 'add_to_cart') {
             const product = products.find(p => p.id === ti.args.productId);
@@ -288,7 +315,9 @@ export default function ChatWidget() {
         }
       }
 
-      setMessages([...newMessages, botMsg]);
+      setMessages(prev => prev.map(m => m.id === botId ? finalBotMsg : m));
+      setIsLoading(false);
+      return;
     } catch (err) {
       console.error('Chat error:', err);
       setMessages([...newMessages, {
@@ -325,7 +354,7 @@ export default function ChatWidget() {
   /* Dymek-zachęta: pokaż po chwili, dopóki klient nie otworzy/nie zamknie go */
   useEffect(() => {
     if (teaserDismissed || isOpen) return;
-    const t = setTimeout(() => setShowTeaser(true), 1800);
+    const t = setTimeout(() => setShowTeaser(true), 15000);
     return () => clearTimeout(t);
   }, [teaserDismissed, isOpen]);
 
