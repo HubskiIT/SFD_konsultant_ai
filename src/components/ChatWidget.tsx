@@ -307,7 +307,7 @@ export default function ChatWidget() {
             }
           } else {
             // Otherwise, render as a tool card
-            botMsg.parts.push({
+            finalBotMsg.parts!.push({
               type: 'tool-invocation',
               toolInvocation: ti,
             });
