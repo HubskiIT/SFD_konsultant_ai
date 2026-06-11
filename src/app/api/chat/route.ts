@@ -80,8 +80,13 @@ function validateOutput(text: string): string {
   // Zabezpieczenie przed halucynacja linkow i obrazkow z markdowna
   cleaned = cleaned.replace(/!\[.*?\]\([^)]+\)/g, '');
   cleaned = cleaned.replace(/\[.*?\]\([^)]+\)/g, '');
-  
-  return cleaned;
+
+  // Zabezpieczenie: model czasem wpisuje skladnie narzedzia jako tekst
+  // (np. 'recommend_products(["wpc82"])' albo emoji + nazwa) zamiast je wywolac.
+  // Wytnij takie fragmenty wraz z poprzedzajacym zwiastunem typu "Oto karty produktow:".
+  cleaned = cleaned.replace(/[^.!?\n]*\b(?:recommend_products|add_to_cart|update_cart_quantity|remove_from_cart|search_products|get_safe_products|get_joint_products|check_live_availability)\s*\([^)]*\)\.?/g, '');
+
+  return cleaned.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -295,7 +300,8 @@ const SYSTEM_PROMPT = [
   'ZAKAZ MYSLNIKOW (—): NIGDY nie uzywaj dlugich myslnikow (—) w swoich odpowiedziach. Zamiast nich uzywaj normalnej polskiej interpunkcji: przecinki, dwukropki, nawiasy, kropki. Pisz naturalnie po polsku.',
   'NIGDY nie wypisuj nazw, cen ani opisow produktow recznie w liscie punktowanej ANI w naglowkach (###) — ZAWSZE uzyj narzedzia recommend_products, aby wyswietlaly sie ich graficzne karty! Karta pokazuje nazwe, cene, opis i przycisk koszyka, wiec powtarzanie tych danych w tekscie to BLAD.',
   'ZAKAZ NAGLOWKOW MARKDOWN: NIGDY nie uzywaj znakow # / ## / ### w odpowiedziach. Pisz zwykle zdania, ewentualnie pogrubienie **...** dla 1-2 kluczowych slow.',
-  'ZAKAZ META-TEKSTU: NIGDY nie pisz "Zaraz pokaze karte", "Wyswietlam produkty", "Oto karta" itp. Karty pojawiaja sie same. Pisz od razu merytorycznie, jak doradca przy ladzie.',
+  'ZAKAZ META-TEKSTU: NIGDY nie pisz "Zaraz pokaze karte", "Wyswietlam produkty", "Oto karta", "Oto karty produktow:" itp. Karty pojawiaja sie same. Pisz od razu merytorycznie, jak doradca przy ladzie.',
+  'NARZEDZIA WYWOLUJESZ, NIE WYPISUJESZ (KRYTYCZNE!): Nazwy narzedzi (recommend_products, add_to_cart itd.) oraz skladnia typu recommend_products(["wpc82"]) NIGDY nie moga pojawic sie w tresci Twojej odpowiedzi dla klienta. To sa FUNKCJE, ktore wywolujesz przez mechanizm tool calls, niewidoczny dla klienta. Wpisanie ich jako tekst to krytyczny blad: klient zobaczy kod zamiast kart.',
   'ZASADA "ZAWSZE KARTA": Za KAZDYM razem, gdy wspominasz konkretny produkt lub pytasz klienta o cokolwiek z nim zwiazanego (np. o smak bialka) -> w TEJ SAMEJ turze MUSISZ wywolac recommend_products z ID tego produktu, aby karta byla widoczna na ekranie. NIGDY nie pisz o produkcie ani nie pytaj o smak bez rownoczesnego wyswietlenia jego karty.',
   'ZAKAZ LINKOW MARKDOWN I OBRAZKOW: ZABRANIA SIE uzywania formatowania linkow (np. [Nazwa](https://...)) oraz wklejania obrazkow (np. ![Obraz](https://...)). Pod zadnym pozorem nie generuj surowych adresow URL. Wywolaj narzedzie recommend_products, a ono samo wyswietli wszystko za Ciebie!',
   'BŁĄD KRYTYCZNY: Jeśli w Twojej odpowiedzi znajdzie się ciąg znaków "![", oznacza to, że złamałeś zasady i wygenerowałeś link obrazkowy Markdown. Masz obowiązek wywołać fizycznie funkcję recommend_products z tablicą ID (np. ["fatBurnerSFD"]), co spowoduje wyświetlenie w UI natywnych, interaktywnych kart.',
@@ -653,8 +659,28 @@ export async function POST(req: Request) {
       continue;
     }
 
+    // ── ODZYSKIWANIE KART: model czasem wpisuje recommend_products([...])
+    // jako tekst zamiast wywolac narzedzie. Sparsuj ID i zsyntetyzuj
+    // prawdziwe wywolanie, zeby klient i tak zobaczyl karty.
+    const rawContent = assistantMessage.content || '';
+    const textualCall = rawContent.match(/recommend_products\s*\(\s*\[([^\]]*)\]\s*\)/);
+    if (textualCall && !toolInvocations.some((ti) => ti.toolName === 'recommend_products')) {
+      const ids = [...textualCall[1].matchAll(/["']([\w-]+)["']/g)]
+        .map((m) => m[1])
+        .filter((id) => Boolean(getProductById(id)));
+      if (ids.length > 0) {
+        toolInvocations.push({
+          toolCallId: `recovered_${Date.now()}`,
+          toolName: 'recommend_products',
+          args: { productIds: ids },
+          result: ids.map((id) => ({ productId: id })),
+          state: 'result',
+        });
+      }
+    }
+
     // ── VALIDATION 3: Output validation ──
-    const finalText = validateOutput(assistantMessage.content || '');
+    const finalText = validateOutput(rawContent);
 
     return Response.json({
       text: finalText,
