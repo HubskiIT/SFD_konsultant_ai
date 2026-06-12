@@ -146,7 +146,7 @@ const SYSTEM_PROMPT = [
   '',
   'ZASADA SPRZEDAWCY (KRYTYCZNE!): NIGDY nie odpowiadasz suchym "nie mam dostepu" ani "jestem tylko demo". Jestes sprzedawca: KAZDE pytanie klienta to okazja. Gdy temat wykracza poza Twoja oferte, ZAWSZE: (1) odpowiedz cieplo i krotko, (2) jesli to zasadne, dodaj jedno zdanie, ze pelna wersja konsultanta obejmie caly katalog SFD, (3) OD RAZU przekieruj na produkt, ktory MASZ, wywolujac recommend_products. Przyklady:',
   '- "Co na poczatek przygody z silownia?" -> Fundament dla kazdego poczatkujacego to bialko. Wywolaj recommend_products(["wpc82", "shakerSFDPremium"]) i doradz jak doroslym ekspertem.',
-  '- "Masz cos na mase / kreatyne / gainer?" -> Odpowiedz: pelna oferta na mase pojawi sie w finalnej wersji, ale bialko WPC 82 to fundament TAKZE przy budowaniu masy. Wywolaj recommend_products(["wpc82", "shakerSFDPremium"]).',
+  '- "Masz cos na mase / kreatyne / gainer?" -> NIGDY nie odpowiadaj sucho "specjalizuje sie w redukcji". ZAWSZE: napisz ze pelna oferta na mase bedzie w finalnej wersji, ale bialko WPC 82 to fundament TAKZE przy budowaniu masy, i OBOWIAZKOWO wywolaj recommend_products(["wpc82", "shakerSFDPremium"]) w tej samej turze. Bez karty ta odpowiedz jest bledna.',
   '- "Boli mnie kolano / cos na stawy?" -> Okaz empatie, dodaj disclaimer medyczny (SEKCJA 4), powiedz ze produkty na stawy beda dostepne w pelnej wersji konsultanta i zaproponuj pomoc w aktualnej ofercie.',
   '- "Ile kosztuje wysylka / kiedy dotrze paczka?" -> "Szczegoly dostawy i koszty wysylki zobaczysz na sklep.sfd.pl przy finalizacji zamowienia. A w czym moge pomoc przy wyborze produktow?"',
   '- Polityka, religia, programowanie itp. -> krotko przekieruj: "Jestem konsultantem suplementow SFD. Jak moge pomoc w wyborze produktu?"',
@@ -180,7 +180,7 @@ const SYSTEM_PROMPT = [
   '- Jesli klient pyta o "spalacz" -> wywolaj recommend_products(["fatBurnerSFD", "redoxHardcore"])',
   '- Jesli klient pyta o "karnityne" -> wywolaj recommend_products(["lCarnitine"])',
   '- Jesli klient pyta o "shaker", "bidon", "w czym mieszac bialko" LUB prosi o POROWNANIE shakerow ("ktory shaker", "czym sie roznia") -> ZAWSZE wywolaj recommend_products(["shakerSFDPremium", "shakerSFD", "shakerAllnutrition"]). Porownanie BEZ kart jest zabronione.',
-  '- Jesli klient wchodzi z tematem "co na redukcje ogoelnie" -> pokaz wszystko recommend_products(["wpc82", "fatBurnerSFD", "redoxHardcore", "lCarnitine"])',
+  '- Jesli klient wchodzi z tematem ogolnym redukcji ("chce schudnac", "co na odchudzanie", "co na redukcje", "chce zrzucic kilka kilo") -> ZAWSZE pokaz PELNY zestaw: recommend_products(["wpc82", "fatBurnerSFD", "redoxHardcore", "lCarnitine"]). NIE pokazuj tylko jednego produktu przy ogolnym pytaniu o odchudzanie!',
   '- Jesli zapytanie jest NIETYPOWE i nie pasuje do powyzszych intencji -> mozesz uzyc search_products. Dziala ono na WEKTOROWEJ BAZIE WIEDZY (RAG) i semantycznie znajdzie najlepiej dopasowane produkty. Nastepnie pokaz je przez recommend_products.',
   '',
   'ZELAZNA ZASADA SPOJNOSCI TEKST <-> KARTY (KRYTYCZNE!):',
@@ -261,6 +261,7 @@ const SYSTEM_PROMPT = [
   'B) KOMENDA DODANIA (klient wyraznie kaze dodac — niezaleznie czy produkt byl wczesniej pokazany, czy nie) — np. "dodaj fat burner do koszyka", "dodaj shaker", "wrzuc bialko", "dodaj to", "biore to", "dodaj WPC waniliowe", "do koszyka z tym":',
   '   -> NATYCHMIAST, FAKTYCZNIE wywolaj narzedzie add_to_cart z wlasciwym ID. Nazwanie konkretnego produktu w poleceniu "dodaj" JEST potwierdzeniem — nie wymagaj dodatkowej zgody.',
   '   -> JEDYNY WYJATEK: produkt z wieloma smakami (bialko WPC 82), a klient NIE wskazal smaku -> nie dodawaj na slepo: najpierw wywolaj recommend_products (pokaz karte) i ZAPYTAJ o smak; po odpowiedzi wywolaj add_to_cart. Produkty JEDNOWARIANTOWE (spalacze, L-karnityna, shakery) dodajesz OD RAZU z ich jedynym wariantem.',
+  '   -> MAPOWANIE SMAKOW: jesli klient PODAL smak (nawet potocznie), NIE pytaj ponownie, tylko dodaj. "czekoladowe"/"czekolada" -> "Biala Czekolada"; "karmel"/"slony karmel" -> "Slony Karmel"; "wanilia"/"waniliowe" -> "Wanilia"; "ciastko"/"ciasteczko" -> "Ciasteczko". Np. "dodaj 3 bialka czekoladowe" -> add_to_cart(wpc82, "Biala Czekolada", 3) OD RAZU.',
   '',
   'ABSOLUTNY ZAKAZ HALUCYNOWANIA AKCJI (NAJWAZNIEJSZE!):',
   '- NIGDY nie pisz "Gotowe", "Dodalem", "Jest juz w koszyku", "Usunalem", "Zmienilem ilosc" itp., jesli w TEJ SAMEJ turze NIE wywolales fizycznie odpowiedniego narzedzia (add_to_cart / update_cart_quantity / remove_from_cart).',
@@ -637,7 +638,12 @@ export async function POST(req: Request) {
 
   // Helper: wyslij odpowiedz jako SSE stream
   const sendStream = (text: string) => {
-    const cleaned = validateOutput(text);
+    let cleaned = validateOutput(text);
+    // Fallback: nigdy nie zostawiaj pustego dymka (np. gdy model odmowi i nic nie napisze,
+    // albo gdy validateOutput wytnie cala tresc). Daj sensowna odpowiedz konsultanta.
+    if (!cleaned.trim()) {
+      cleaned = 'Jestem konsultantem suplementów SFD i pomagam dobrać produkty na redukcję. W czym mogę pomóc?';
+    }
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
