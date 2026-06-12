@@ -578,8 +578,9 @@ export default function ChatWidget() {
           {/* Messages */}
           <div
             ref={chatContainerRef}
-            className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar bg-[#f8fafc] min-h-[200px] relative"
+            className="flex-1 p-4 overflow-y-auto overflow-x-hidden custom-scrollbar bg-[#f8fafc] min-h-[200px] relative"
           >
+           <div className={`space-y-4 ${isExpanded ? 'max-w-3xl mx-auto w-full' : ''}`}>
             {/* Welcome message */}
             {/* Welcome message (always visible) */}
             <div className="flex gap-3 max-w-[85%] animate-fade-up">
@@ -688,6 +689,7 @@ export default function ChatWidget() {
             <Toast message={toastMsg} visible={toastVisible} />
 
             <div ref={messagesEndRef} />
+           </div>
           </div>
 
           {/* Quick suggestions */}
