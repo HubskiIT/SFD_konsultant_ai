@@ -59,9 +59,20 @@ export default function ProductCard({ product, onAddToCart, compact = false }: P
         <h4 className="font-bold text-slate-800 text-sm leading-tight">
           {product.name}
         </h4>
-        <p className={`text-xs text-slate-500 mt-1 leading-relaxed ${compact ? 'line-clamp-4' : 'line-clamp-2'}`}>
-          {product.description}
-        </p>
+        {product.highlights && product.highlights.length > 0 ? (
+          <ul className="mt-1.5 space-y-1">
+            {product.highlights.map((h, i) => (
+              <li key={i} className="flex gap-1.5 text-xs text-slate-600 leading-snug">
+                <i className="fa-solid fa-check text-[9px] text-sfd-blue mt-1 shrink-0" />
+                <span>{h}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            {product.description}
+          </p>
+        )}
 
         {/* Cena — wyraźnie w treści karty */}
         <div className="mt-2 flex items-baseline gap-2">

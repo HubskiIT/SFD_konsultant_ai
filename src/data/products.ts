@@ -21,6 +21,7 @@ export interface Product {
   name: string;
   brand: string;
   description: string;
+  highlights?: string[];
   price: number;
   unit: string;
   imageUrl: string;
@@ -47,6 +48,11 @@ export const products: Product[] = [
     brand: 'SFD NUTRITION',
     description:
       'Koncentrat białka serwatkowego WPC 82% z szybkim rozpuszczaniem. Idealny po treningu i jako uzupełnienie diety białkowej na redukcji.',
+    highlights: [
+      'Koncentrat białka serwatkowego WPC 82%',
+      'Chroni mięśnie i zwiększa sytość na redukcji',
+      'Szybko się rozpuszcza, idealny po treningu',
+    ],
     price: 84,
     unit: '700g',
     imageUrl:
@@ -73,6 +79,11 @@ export const products: Product[] = [
     brand: 'SFD NUTRITION',
     description:
       'Zaawansowany spalacz tłuszczu z kofeiną, synefryną i EGCG. Wspomaga termogenezę i redukcję tkanki tłuszczowej.',
+    highlights: [
+      'Kofeina, synefryna i EGCG w jednej kapsułce',
+      'Wspomaga termogenezę i spalanie tłuszczu',
+      'Łagodny, dobry na start z redukcją',
+    ],
     price: 40,
     unit: '100 kapsułek',
     imageUrl:
@@ -94,6 +105,11 @@ export const products: Product[] = [
     brand: 'ALLNUTRITION',
     description:
       'Zaawansowany spalacz tłuszczu z opatentowanymi Sinetrol® Xpur C i Capsimax®. Kompleks 12 składników aktywnych, kofeina z 3 źródeł (399 mg/dzień). Najlepszy wybór na redukcję.',
+    highlights: [
+      'Opatentowane Sinetrol® Xpur C i Capsimax®',
+      '12 składników aktywnych, kofeina z 3 źródeł',
+      'Mocny spalacz dla zaawansowanych',
+    ],
     price: 140,
     unit: '90 kapsułek',
     imageUrl:
@@ -120,6 +136,11 @@ export const products: Product[] = [
     brand: 'SFD NUTRITION',
     description:
       'Wysoko dawkowana L-karnityna wspierająca transport kwasów tłuszczowych do mitochondriów. Idealna przed cardio na redukcji.',
+    highlights: [
+      'Wysoko dawkowana L-karnityna',
+      'Wspiera transport kwasów tłuszczowych',
+      'Bez stymulantów, idealna przed cardio',
+    ],
     price: 40,
     unit: '120 kapsułek',
     imageUrl:
@@ -141,6 +162,11 @@ export const products: Product[] = [
     brand: 'SFD NUTRITION',
     description:
       'Klasyczny, szczelny shaker 700 ml z zakręcanym wieczkiem i sitkiem rozbijającym grudki. Duże logo SFD. Budżetowy wybór do codziennego mieszania białka i odżywek.',
+    highlights: [
+      'Pojemność 700 ml, szczelne wieczko',
+      'Sitko rozbijające grudki',
+      'Budżetowy wybór na co dzień',
+    ],
     price: 12.99,
     unit: '700 ml',
     imageUrl:
@@ -162,6 +188,11 @@ export const products: Product[] = [
     brand: 'SFD NUTRITION',
     description:
       'Shaker premium 700 ml z atestowanego tworzywa BPA Free. Technologia Circle (polerowane wnętrze) idealnie miesza zawartość BEZ sitka. Solidny i wygodny do białka.',
+    highlights: [
+      'Atestowane tworzywo BPA Free',
+      'Technologia Circle miesza bez sitka',
+      'Solidny i wygodny, premium SFD',
+    ],
     price: 29.99,
     unit: '700 ml',
     imageUrl:
@@ -183,6 +214,11 @@ export const products: Product[] = [
     brand: 'ALLNUTRITION',
     description:
       'Shaker premium 700 ml z atestowanego tworzywa BPA Free. Technologia Circle (polerowane wnętrze) gwarantuje idealne wymieszanie bez użycia sitka. Estetyczny, czarny design.',
+    highlights: [
+      'Atestowane tworzywo BPA Free',
+      'Technologia Circle miesza bez sitka',
+      'Estetyczny, czarny design',
+    ],
     price: 29.99,
     unit: '700 ml',
     imageUrl:

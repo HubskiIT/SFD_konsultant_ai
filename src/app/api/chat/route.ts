@@ -595,6 +595,36 @@ async function callOpenAINonStream(messages: unknown[]) {
   return callOpenAI(messages, false);
 }
 
+// Buduje odpowiedz SSE (tools + tekst znak po znaku). Uzywane wszedzie,
+// tez przy wczesnych returnach (walidacja), zeby frontend zawsze dostal stream.
+function sseResponse(text: string, toolInvocations: unknown[] = []) {
+  const cleaned = text.trim()
+    ? text
+    : 'Jestem konsultantem suplementów SFD i pomagam dobrać produkty na redukcję. W czym mogę pomóc?';
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(
+        `data: ${JSON.stringify({ type: 'tools', toolInvocations })}\n\n`
+      ));
+      for (const ch of cleaned) {
+        controller.enqueue(encoder.encode(
+          `data: ${JSON.stringify({ type: 'token', token: ch })}\n\n`
+        ));
+      }
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST HANDLER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -607,10 +637,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Brak wiadomosci.' }, { status: 400 });
   }
   if (rawMessages.length > MAX_MESSAGES) {
-    return Response.json({
-      text: 'Rozmowa jest bardzo dluga. Prosze odswiezyc strone i rozpoczac nowa rozmowe, abym mogl Ci lepiej pomoc!',
-      toolInvocations: [],
-    });
+    return sseResponse('Rozmowa jest bardzo długa. Proszę odświeżyć stronę i rozpocząć nową rozmowę, abym mógł Ci lepiej pomóc!');
   }
 
   // ── VALIDATION 2: Last message input sanitization ──
@@ -618,10 +645,7 @@ export async function POST(req: Request) {
   if (lastMessage && lastMessage.role === 'user') {
     const check = sanitizeInput(lastMessage.content);
     if (!check.safe) {
-      return Response.json({
-        text: check.reason,
-        toolInvocations: [],
-      });
+      return sseResponse(check.reason);
     }
   }
 
@@ -636,40 +660,8 @@ export async function POST(req: Request) {
 
   const toolInvocations = [];
 
-  // Helper: wyslij odpowiedz jako SSE stream
-  const sendStream = (text: string) => {
-    let cleaned = validateOutput(text);
-    // Fallback: nigdy nie zostawiaj pustego dymka (np. gdy model odmowi i nic nie napisze,
-    // albo gdy validateOutput wytnie cala tresc). Daj sensowna odpowiedz konsultanta.
-    if (!cleaned.trim()) {
-      cleaned = 'Jestem konsultantem suplementów SFD i pomagam dobrać produkty na redukcję. W czym mogę pomóc?';
-    }
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      start(controller) {
-        // Najpierw wyslij toolInvocations jako pierwszy event
-        controller.enqueue(encoder.encode(
-          `data: ${JSON.stringify({ type: 'tools', toolInvocations })}\n\n`
-        ));
-        // Potem tekst znak po znaku (symulacja streamingu z gotowego tekstu)
-        // Uzywamy przy fast-path gdzie tekst juz mamy
-        for (const ch of cleaned) {
-          controller.enqueue(encoder.encode(
-            `data: ${JSON.stringify({ type: 'token', token: ch })}\n\n`
-          ));
-        }
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-        controller.close();
-      },
-    });
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    });
-  };
+  // Helper: wyslij finalna odpowiedz jako SSE (z aktualna lista narzedzi)
+  const sendStream = (text: string) => sseResponse(validateOutput(text), toolInvocations);
 
   // ── TOOL-CALLING LOOP (max 5 iterations) ──
   for (let i = 0; i < 5; i++) {
