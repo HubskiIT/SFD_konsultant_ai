@@ -100,11 +100,7 @@ export default function ProductCard({ product, onAddToCart, compact = false }: P
             </div>
           )}
 
-          <div
-            className={`w-full flex items-center gap-2 ${
-              compact ? 'flex-col' : 'sm:w-auto flex-col sm:flex-row sm:ml-auto mt-2 sm:mt-0'
-            }`}
-          >
+          <div className="w-full flex flex-col items-stretch gap-1.5">
             <button
               onClick={handleAdd}
               disabled={isAdded}
@@ -131,10 +127,10 @@ export default function ProductCard({ product, onAddToCart, compact = false }: P
               href={product.shopUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sfd-blue hover:text-sfd-dark text-xs font-medium flex items-center gap-1 whitespace-nowrap"
+              className="text-slate-400 hover:text-sfd-blue text-[11px] font-medium flex items-center justify-center gap-1 whitespace-nowrap transition-colors"
             >
-              <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
-              Sklep SFD
+              <i className="fa-solid fa-arrow-up-right-from-square text-[9px]" />
+              Zobacz w sklepie SFD
             </a>
           </div>
         </div>
