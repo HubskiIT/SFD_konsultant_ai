@@ -174,6 +174,10 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
+                <p className="text-sm font-semibold text-sfd-blue mt-3 flex items-center gap-1.5">
+                  <i className="fa-solid fa-wand-magic-sparkles text-xs" />
+                  ...lub dowolne inne pytanie!
+                </p>
               </div>
 
               {/* Kolumna 2: Co już działa */}
