@@ -143,7 +143,7 @@ export default function Home() {
                 </span>
               </div>
               <h2 className="text-lg sm:text-2xl font-extrabold leading-tight">
-                Od czego zacząć?
+                Panie Mateuszu, od czego zacząć?
               </h2>
               <p className="text-blue-100 text-xs sm:text-sm mt-1.5 leading-relaxed max-w-2xl">
                 Kliknij niebieski przycisk czatu w prawym dolnym rogu i przetestuj konsultanta.
