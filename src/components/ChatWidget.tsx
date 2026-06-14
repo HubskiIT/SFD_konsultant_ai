@@ -580,7 +580,7 @@ export default function ChatWidget() {
             ref={chatContainerRef}
             className="flex-1 p-4 overflow-y-auto overflow-x-hidden custom-scrollbar bg-[#f8fafc] min-h-[200px] relative"
           >
-           <div className={`space-y-4 ${isExpanded ? 'max-w-3xl mx-auto w-full' : ''}`}>
+           <div className="space-y-4">
             {/* Welcome message */}
             {/* Welcome message (always visible) */}
             <div className="flex gap-3 max-w-[85%] animate-fade-up">
