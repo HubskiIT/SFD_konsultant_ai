@@ -132,6 +132,101 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Przewodnik dla Mateusza — od czego zacząć */}
+        <div className="mb-10">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-sfd-gradient px-5 sm:px-7 py-5 text-white">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  <i className="fa-solid fa-hand-sparkles mr-1" />
+                  Przewodnik demo
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-2xl font-extrabold leading-tight">
+                Panie Mateuszu, od czego zacząć?
+              </h2>
+              <p className="text-blue-100 text-xs sm:text-sm mt-1.5 leading-relaxed max-w-2xl">
+                Kliknij niebieski przycisk czatu w prawym dolnym rogu i przetestuj konsultanta.
+                Poniżej podpowiadam, o co pytać, co już działa i co dopiero budujemy.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+              {/* Kolumna 1: Przykładowe pytania */}
+              <div className="p-5 sm:p-6">
+                <p className="text-[11px] font-bold text-sfd-blue uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <i className="fa-solid fa-comments" />
+                  Zadaj te pytania
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Chcę schudnąć, od czego zacząć?',
+                    'Chciałbym kupić białko',
+                    'Jaki spalacz polecasz?',
+                    'Który shaker wybrać i czym się różnią?',
+                    'Mam nadciśnienie, jaki spalacz będzie bezpieczny?',
+                    'Dodaj 2 białka waniliowe do koszyka',
+                  ].map((q, i) => (
+                    <li key={i} className="flex gap-2.5 text-sm text-slate-600 leading-snug">
+                      <i className="fa-solid fa-quote-left text-[10px] text-slate-300 mt-1 shrink-0" />
+                      <span className="italic">„{q}"</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Kolumna 2: Co już działa */}
+              <div className="p-5 sm:p-6">
+                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <i className="fa-solid fa-circle-check" />
+                  Co już działa
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Doradztwo eksperckie i dobór suplementów pod cel',
+                    'Wyświetlanie graficznych kart produktów',
+                    'Dodawanie i edycja koszyka przez czat',
+                    'Cross-selling (np. białko + shaker)',
+                    'Bramka bezpieczeństwa przy pytaniach zdrowotnych',
+                    'Odpowiedzi na żywo, słowo po słowie',
+                  ].map((f, i) => (
+                    <li key={i} className="flex gap-2.5 text-sm text-slate-600 leading-snug">
+                      <i className="fa-solid fa-check text-[11px] text-emerald-500 mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Kolumna 3: W budowie */}
+              <div className="p-5 sm:p-6 bg-orange-50/30">
+                <p className="text-[11px] font-bold text-orange-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <i className="fa-solid fa-screwdriver-wrench" />
+                  W budowie
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Integracja z magazynem SFD (stany i ceny na żywo)',
+                    'Analiza zdjęcia etykiety (Vision AI)',
+                    'Kalkulator suplementacji pod wagę i cel',
+                    'Wiadomości głosowe (klient mówi zamiast pisać)',
+                    'Pamięć klienta między rozmowami',
+                    'Wielojęzyczność: PL / EN / UA',
+                  ].map((f, i) => (
+                    <li key={i} className="flex gap-2.5 text-sm text-slate-600 leading-snug">
+                      <i className="fa-solid fa-circle-plus text-[11px] text-orange-400 mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">
+                  Szczegóły funkcji i pakietów znajdzie Pan niżej w sekcji „Warianty wdrożenia".
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Demo Product Grid */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-5">
