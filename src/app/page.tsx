@@ -143,11 +143,12 @@ export default function Home() {
                 </span>
               </div>
               <h2 className="text-lg sm:text-2xl font-extrabold leading-tight">
-                Panie Mateuszu, od czego zacząć?
+                Od czego zacząć?
               </h2>
               <p className="text-blue-100 text-xs sm:text-sm mt-1.5 leading-relaxed max-w-2xl">
                 Kliknij niebieski przycisk czatu w prawym dolnym rogu i przetestuj konsultanta.
-                Poniżej podpowiadam, o co pytać, co już działa i co dopiero budujemy.
+                Poniżej podpowiadam, o co pytać, co już działa, a co agent może dodatkowo zyskać
+                w zależności od wybranego pakietu.
               </p>
             </div>
 
@@ -201,8 +202,8 @@ export default function Home() {
               {/* Kolumna 3: W budowie */}
               <div className="p-5 sm:p-6 bg-orange-50/30">
                 <p className="text-[11px] font-bold text-orange-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <i className="fa-solid fa-screwdriver-wrench" />
-                  W budowie
+                  <i className="fa-solid fa-layer-group" />
+                  Dostępne zależnie od pakietu
                 </p>
                 <ul className="space-y-2.5">
                   {[
@@ -226,6 +227,9 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Sekcja pakietów / oferta wdrożenia — tuż pod informacją jak korzystać */}
+        <PricingSection />
 
         {/* Demo Product Grid */}
         <div className="mb-10">
@@ -266,9 +270,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-
-        {/* Sekcja pakietów / oferta wdrożenia */}
-        <PricingSection />
 
         {/* CTA Banner */}
         <div className="bg-sfd-gradient rounded-2xl p-8 text-white text-center relative overflow-hidden">
